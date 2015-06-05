@@ -1,4 +1,4 @@
-TEST='scala scales.Main ../tests/in/sort.uc'
+TEST='scala scales.Main tests/in/sort.uc'
 
 all: scales scales/Main.class scales/Uncool.class scales/exprs/Var.class
 	@echo "Testing..."
@@ -23,4 +23,4 @@ scales:
 	scalac *scala
 
 clean:
-	rm -rf *.class scales
+	rm -rf *.class *.j scales

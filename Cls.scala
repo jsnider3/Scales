@@ -7,6 +7,15 @@ class Cls (name: String, parent: String, feats: List[Feature]){
   override def toString() = ("class " + name + " inherits " + parent + " {" +
                               feats.mkString("; ") + "}")
 
+  def compile () {
+    println(".class public " + name)
+    parent match {
+      case "" => println(".super java/lang/Object")
+      case _ => println(".super " + parent)
+    }
+
+  }
+
   def getAttributes(prog: List[Cls]) : Map[String, String] = {
     var attrs = if (hasSuper()) {
       getSuper(prog).get.getAttributes(prog)
@@ -62,4 +71,15 @@ class Cls (name: String, parent: String, feats: List[Feature]){
   def Name() = name
   def Parent() = parent
 
+  def typecheck() = {
+    if (!Main.builtins.contains(Name())) {
+      if (hasSuper() && getSuper(Main.prog) == None) {
+        Log.error(Name() + " inherits from undefined " + Parent())
+      }
+      var typemap = getAttributes(Main.prog)
+      typemap("self") = Name()
+      
+      getMethods().foreach{_.typecheck(typemap)}
+    }
+  }
 }

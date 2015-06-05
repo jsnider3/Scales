@@ -5,7 +5,12 @@ import scala.collection.mutable.Map
 object Main {
 
   var prog = List[Cls]()
-  val builtins = List("Int", "Int[]", "String", "Object")
+  val builtins = List("Bool", "Int", "Int[]", "String", "Object")
+
+  def compileObjectClass = {
+    println("; TODO")
+  }
+
 
   def findMain(prog: List[Cls]) : Boolean = {
     var found = false
@@ -22,6 +27,7 @@ object Main {
   }
 
   def makeBuiltIns(clses: List[Cls]) : List[Cls] = {
+    val tyBool = new Cls("Bool", "", List())
     val tyInt = new Cls("Int", "", List())
     val tyArr = new Cls("Int[]", "", List())
     val tyStr = new Cls("String", "", List())
@@ -34,44 +40,10 @@ object Main {
       "String", Constant("Int", "0"))
     val tyObj = new Cls("Object", "", List(abort, in_int, in_string, out_int,
       out_string))
-    List[Cls](tyInt, tyArr, tyStr, tyObj) ++ clses
+    List[Cls](tyBool, tyInt, tyArr, tyStr, tyObj) ++ clses
   }
 
   def Prog() : List[Cls] = prog
-
-  def typecheckClass(clas: Cls) = {
-    if (!builtins.contains(clas.Name())) {
-      if (clas.hasSuper() && clas.getSuper(prog) == None) {
-        Log.error(clas.Name() + " inherits from undefined " + clas.Parent())
-      }
-      var typemap = clas.getAttributes(prog)
-      typemap("self") = clas.Name()
-      
-      clas.getMethods().foreach{typecheckMethod(_, typemap)}
-    }
-  }
-
-  def typecheckMethod(meth: Method, state: Map[String, String]) = {
-    var methodState = state.clone()
-    var argNames = List[String]()
-    for(arg <- meth.args)
-    {
-      //UncoolAid 2.1.2 says that method params hide attrbiutes.
-      if(argNames.contains(arg.name))
-      {
-        Log.error("Duplicate " + arg.name + " in " + meth.name + " args.")
-      }
-      argNames +:= arg.name
-      methodState(arg.name) = arg.ty
-    }
-//    println(meth.name +":" + argNames)
-    val ty = meth.body.typecheck(methodState);
-    if(ty != meth.ty)
-    {
-      Log.error(meth.name + " returns " + ty + " declares " + meth.ty)
-    }
-    //TODO setClass(self.name);*/
-  }
 
   def main(args: Array[String]) = {
     val ast : List[Cls] = Uncool.make_ast(args(0))
@@ -79,12 +51,13 @@ object Main {
       Log.error("Main not found.")
     }
     prog = makeBuiltIns(ast)
-    prog.foreach{typecheckClass}
+    prog.foreach{_.typecheck}
     if (Log.errors.length > 0) {
       println("The following type errors were found:")
       Log.errors.foreach{println}
     } else {
-      //TODO Compile
+      compileObjectClass
+      prog.filter(c => !builtins.contains(c.Name())).foreach{_.compile}
     } 
   }
 }

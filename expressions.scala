@@ -224,7 +224,7 @@ case class MethodCall(id: Expr, args: List[Expr]) extends Expr with Callable {
       }
       case _ => {
         Log.error("Method call on non-method " + id)
-        "Object"
+        "UCObject"
       }
     }
   }
@@ -250,7 +250,7 @@ case class ClassCall(self: Expr, id: Expr, args: List[Expr]) extends Expr
       case _ => {
         Log.error("Inappropriate class call. " + self + " and "
                     + id + " must be ids.")
-        "Object"
+        "UCObject"
       }
     }
   }
@@ -312,7 +312,12 @@ case class Method(name: String, args:List[Attribute], ty:String, body: Expr)
     println(".end method")
   }
 
-  def jasminType(ty : String) : String = {
+  def jasminArgs : String = {
+    //TODO
+    "()"
+  }
+
+  def jasminType : String = {
     //TODO 
     "V"
   }
@@ -339,9 +344,8 @@ case class Method(name: String, args:List[Attribute], ty:String, body: Expr)
   }
 
   def printHeader() = {
-    val j_ty = jasminType(ty)
     //TODO Args and return type.
-    ".method public " + name + "(" + ")" + j_ty
+    println(".method public " + name + jasminArgs + jasminType)
     println("  .limit locals 32")
     println("  .limit stack 32")
   }

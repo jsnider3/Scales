@@ -177,7 +177,7 @@ class Comp extends RegexParsers with PackratParsers {
 
   lazy val cls: PackratParser[Cls] = (
     "class" ~> typename ~ ("{" ~> features <~ "}"))  ^^{
-    case a ~ b => new Cls(a, "Object", b)
+    case a ~ b => new Cls(a, "UCObject", b)
   }
 
   lazy val subcls: PackratParser[Cls] = (

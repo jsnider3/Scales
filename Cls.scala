@@ -8,7 +8,8 @@ class Cls (name: String, parent: String, feats: List[Feature]){
                               feats.mkString("; ") + "}")
 
   def compile () {
-    //TODO Redirect stdout to ${name}.j
+    val stdout = Console.out
+    Console.setOut(new java.io.FileOutputStream(name + ".j"))
     println(".class public " + name)
     parent match {
       case "" => println(".super UCObject")
@@ -19,10 +20,20 @@ class Cls (name: String, parent: String, feats: List[Feature]){
       println(".method public static main([Ljava/lang/String;)V")
       println("  .limit locals 32")
       println("  .limit stack 32")
-      //TODO (new Main).main()
-      println("  .return")
+      println("  new Main")
+      println("  dup")
+      println("  invokespecial Main/<init>()V")
+      println("  invokevirtual Main/main()V")
+      println("  return")
+      println(".end method")
     }
+    println(".method public <init>()V")
+    println("  aload_0")
+    println("  invokespecial " + parent + "/<init>()V")
+    println("  return")
+    println(".end method")
     getMethods().foreach{_.compile}
+    Console.setOut(stdout)
   }
 
   def getAttributes(prog: List[Cls]) : Map[String, String] = {

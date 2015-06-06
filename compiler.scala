@@ -5,29 +5,37 @@ import scala.collection.mutable.Map
 object Main {
 
   var prog = List[Cls]()
-  val builtins = List("Bool", "Int", "Int[]", "String", "Object")
+  val builtins = List("Bool", "Int", "Int[]", "String", "UCObject")
 
   def compileObjectClass = {
-    //TODO Redirect stdout to UCObject.j
+    //TODO Close file output.
+    val stdout = Console.out
+    Console.setOut(new java.io.FileOutputStream("UCObject.j"))
     println(".class public UCObject")
     println(".super java/lang/Object")
     println("")
     println(".method public <init>()V")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
     println("  aload_0")
     println("  invokespecial java/lang/Object/<init>()V")
     println("  return")
     println(".end method")
     println("")
-    println(".method public out_string()")
+    println(".method public out_string(Ljava/lang/String;)V")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
     println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
     println("  aload_1")
     println("  invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V")
     println("  return")
     println(".end method")
     println("")
-    println(".method public out_int()")
+    println(".method public out_int(I)V")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
     println("  iload_1")
-    println("  invokestatic java/lang/String/valueOf(I)Ljava/lang/String")
+    println("  invokestatic java/lang/String/valueOf(I)Ljava/lang/String;")
     println("  astore_2")
     println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
     println("  aload_2")
@@ -35,20 +43,34 @@ object Main {
     println("  return")
     println(".end method")
     println("")
-    println(".method public in_string()")
-    println("  ;TODO")
-    println("  return")
+    println(".method public in_string()Ljava/lang/String;")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
+    println("  new java/util/Scanner")
+    println("  dup")
+    println("  getstatic java/lang/System/in Ljava/io/InputStream;")
+    println("  invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V")
+    println("  invokevirtual java/util/Scanner/next()Ljava/lang/String;")
+    println("  areturn")
     println(".end method")
     println("")
-    println(".method public in_int()")
-    println("  ;TODO")
-    println("  return")
+    println(".method public in_int()I")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
+    println("  aload_0")
+    println("  invokevirtual UCObject/in_string()Ljava/lang/String;")
+    println("  invokestatic java/lang/Integer/parseInt(Ljava/lang/String;)I")
+    println("  ireturn")
     println(".end method")
     println("")
-    println(".method public abort()")
-    println("  ;TODO")
+    println(".method public abort()V")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
+    println("  bipush 0")
+    println("  invokestatic java/lang/System/exit(I)V")
     println("  return")
     println(".end method")
+    Console.setOut(stdout)
   }
 
   def findMain(prog: List[Cls]) : Boolean = {
@@ -70,18 +92,18 @@ object Main {
   }
 
   def makeBuiltIns(clses: List[Cls]) : List[Cls] = {
-    val tyBool = new Cls("Bool", "", List())
-    val tyInt = new Cls("Int", "", List())
-    val tyArr = new Cls("Int[]", "", List())
-    val tyStr = new Cls("String", "", List())
-    val abort = Method("abort", List(),"Object", Constant("Int", "0"))
+    val tyBool = new Cls(builtins(0), "", List())
+    val tyInt = new Cls(builtins(1), "", List())
+    val tyArr = new Cls(builtins(2), "", List())
+    val tyStr = new Cls(builtins(3), "", List())
+    val abort = Method("abort", List(), builtins(4), Constant("Int", "0"))
     val in_int = Method("in_int", List(),"Int", Constant("Int", "0"))
     val in_string = Method("in_string", List(),"String", Constant("Int", "0"))
     val out_int = Method("out_int", List(Attribute("", "Int")),"Int",
       Constant("Int", "0"))
     val out_string = Method("out_string", List(Attribute("", "String")),
       "String", Constant("Int", "0"))
-    val tyObj = new Cls("Object", "", List(abort, in_int, in_string, out_int,
+    val tyObj = new Cls(builtins(4), "", List(abort, in_int, in_string, out_int,
       out_string))
     List[Cls](tyBool, tyInt, tyArr, tyStr, tyObj) ++ clses
   }

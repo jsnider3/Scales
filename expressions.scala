@@ -301,6 +301,22 @@ abstract class Feature
 case class Attribute(name: String, ty: String) extends Feature
 case class Method(name: String, args:List[Attribute], ty:String, body: Expr)
   extends Feature {
+
+  var clas = ""
+
+  def compile() = {
+    printHeader()
+    //TODO main has to be compiled specially.
+    body.compile(Map[String,String]())
+    println("  return")
+    println(".end method")
+  }
+
+  def jasminType(ty : String) : String = {
+    //TODO 
+    "V"
+  }
+
   def typecheck(state: Map[String, String]) = {
     var methodState = state.clone()
     var argNames = List[String]()
@@ -319,8 +335,17 @@ case class Method(name: String, args:List[Attribute], ty:String, body: Expr)
     {
       Log.error(name + " returns " + bty + " declares " + ty)
     }
-    //TODO setClass(self.name);*/
+    clas = Main.lookupClass(state("self")).get.Name()
   }
+
+  def printHeader() = {
+    val j_ty = jasminType(ty)
+    //TODO Args and return type.
+    ".method public " + name + "(" + ")" + j_ty
+    println("  .limit locals 32")
+    println("  .limit stack 32")
+  }
+
 }
 
 

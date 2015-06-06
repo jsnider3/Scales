@@ -8,9 +8,48 @@ object Main {
   val builtins = List("Bool", "Int", "Int[]", "String", "Object")
 
   def compileObjectClass = {
-    println("; TODO")
+    //TODO Redirect stdout to UCObject.j
+    println(".class public UCObject")
+    println(".super java/lang/Object")
+    println("")
+    println(".method public <init>()V")
+    println("  aload_0")
+    println("  invokespecial java/lang/Object/<init>()V")
+    println("  return")
+    println(".end method")
+    println("")
+    println(".method public out_string()")
+    println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
+    println("  aload_1")
+    println("  invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V")
+    println("  return")
+    println(".end method")
+    println("")
+    println(".method public out_int()")
+    println("  iload_1")
+    println("  invokestatic java/lang/String/valueOf(I)Ljava/lang/String")
+    println("  astore_2")
+    println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
+    println("  aload_2")
+    println("  invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V")
+    println("  return")
+    println(".end method")
+    println("")
+    println(".method public in_string()")
+    println("  ;TODO")
+    println("  return")
+    println(".end method")
+    println("")
+    println(".method public in_int()")
+    println("  ;TODO")
+    println("  return")
+    println(".end method")
+    println("")
+    println(".method public abort()")
+    println("  ;TODO")
+    println("  return")
+    println(".end method")
   }
-
 
   def findMain(prog: List[Cls]) : Boolean = {
     var found = false
@@ -24,6 +63,10 @@ object Main {
       }
     }
     found
+  }
+
+  def lookupClass(name : String) : Option[Cls] = {
+    prog.find({_.Name() == name})
   }
 
   def makeBuiltIns(clses: List[Cls]) : List[Cls] = {
@@ -43,8 +86,6 @@ object Main {
     List[Cls](tyBool, tyInt, tyArr, tyStr, tyObj) ++ clses
   }
 
-  def Prog() : List[Cls] = prog
-
   def main(args: Array[String]) = {
     val ast : List[Cls] = Uncool.make_ast(args(0))
     if (!findMain(ast)) {
@@ -60,4 +101,7 @@ object Main {
       prog.filter(c => !builtins.contains(c.Name())).foreach{_.compile}
     } 
   }
+
+  def Prog() : List[Cls] = prog
+
 }

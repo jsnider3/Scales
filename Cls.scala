@@ -8,12 +8,21 @@ class Cls (name: String, parent: String, feats: List[Feature]){
                               feats.mkString("; ") + "}")
 
   def compile () {
+    //TODO Redirect stdout to ${name}.j
     println(".class public " + name)
     parent match {
-      case "" => println(".super java/lang/Object")
+      case "" => println(".super UCObject")
       case _ => println(".super " + parent)
     }
-
+    //TODO Output fields.
+    if (name == "Main") {
+      println(".method public static main([Ljava/lang/String;)V")
+      println("  .limit locals 32")
+      println("  .limit stack 32")
+      //TODO (new Main).main()
+      println("  .return")
+    }
+    getMethods().foreach{_.compile}
   }
 
   def getAttributes(prog: List[Cls]) : Map[String, String] = {
@@ -22,14 +31,13 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     } else {
       Map[String, String]()
     }
-    for (feat <- feats) {
-      feat match {
-        case Attribute(n, t) => if (attrs.contains(n)) {
-            Log.error("Duplicate field " + n + " in class " + name + ".")
-          }
-          attrs(n) = t
-        case _ =>
+    val ours = feats.filter(_.isInstanceOf[Attribute]) map
+                             (_.asInstanceOf[Attribute])
+    for (Attribute(n,t) <- ours) {
+      if (attrs.contains(n)) {
+        Log.error("Duplicate field " + n + " in class " + name + ".")
       }
+      attrs(n) = t
     }
     attrs
   }
@@ -48,16 +56,9 @@ class Cls (name: String, parent: String, feats: List[Feature]){
   }
 
   def getMethods() : List[Method] = {
-   var methods = List[Method]()
-   for (feat <- feats) {
-      feat match {
-        case Method(n, a, t, b) => if (methods.find(x => x.name == n) != None) {
-            Log.error("Duplicate method " + n + " in class " + name + ".")
-          }
-          methods +:= Method(n, a, t, b)
-        case _ =>
-      }
-    }
+   val methods = feats.filter(_.isInstanceOf[Method]) map
+                             (_.asInstanceOf[Method])
+    //TODO Check for duplicates.
     methods
   }
 

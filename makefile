@@ -1,7 +1,6 @@
 TEST='scala scales.Main tests/in/sort.uc'
 
 all: scales scales/Main.class scales/Uncool.class scales/exprs/Var.class
-	@echo "Testing..."
 	@eval ${TEST}
 
 scales/Main.class: scales compiler.scala

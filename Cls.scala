@@ -32,12 +32,17 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       println(".end method")
     }
     println(".method public <init>()V")
+    println("  .limit stack 4")
     println("  aload_0")
     println("  invokespecial " + parent + "/<init>()V")
-    //TODO Init attributes.
+    val parScope = if (hasSuper()) {
+      getSuper(Main.prog).get.state
+    } else {
+      new LookupTable()
+    }
+    val state = parScope.enterScope(getAttributes(Main.prog))
     println("  return")
     println(".end method")
-    val state = (new LookupTable()).enterScope(getAttributes(Main.prog))
     getMethods().foreach{_.compile(state)}
     Console.setOut(stdout)
   }
@@ -98,13 +103,30 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
   def Name() = name
   def Parent() = parent
 
+  def state : LookupTable = {
+    val attrs = feats.filter(_.isInstanceOf[Attribute]) map
+                             (_.asInstanceOf[Attribute])
+    val pos = Map[String, Pos]()
+    val tys = Map[String, String]()
+    for (Attribute(n, t, _) <- attrs) {
+      pos(n) = Field(name + "/" + n)
+      tys(n) = t    
+    }
+    val parScope = if (hasSuper()) {
+      getSuper(Main.prog).get.state
+    } else {
+      new LookupTable()
+    }
+    parScope.enterScope(pos, tys) 
+  }
+
   def typecheck() = {
-    if (!Main.builtins.contains(Name())) {
+    if (!Main.builtins.contains(name)) {
       if (hasSuper() && getSuper(Main.prog) == None) {
-        Log.error(Name() + " inherits from undefined " + Parent())
+        Log.error(name + " inherits from undefined " + parent)
       }
       var typemap = getAttributeMap(Main.prog)
-      typemap("self") = Name()
+      typemap("self") = name
       
       getMethods().foreach{_.typecheck(typemap)}
       (feats.filter(_.isInstanceOf[Attribute]) map

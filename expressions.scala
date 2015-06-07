@@ -174,8 +174,7 @@ case class Asgn(id: String, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    rval.compile(state)
-    state.put(id)
+    state.put(id, rval, state)
   }
 }
 

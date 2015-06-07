@@ -1,5 +1,6 @@
 package scales
 import scala.collection.mutable.Map
+import scales.exprs.Expr
 import scales.exprs.Jasmin
 
 trait Scoped {
@@ -44,8 +45,16 @@ class LookupTable {
 
   }
 
-  def put(id: String) = {
-    //TODO 
-    //Do something like `types(id) + "store_" + locs(id)`
+  def put(id: String, ex: Expr, state: LookupTable) = {
+     locs(id) match {
+      case Field(f) => {
+        println("  aload_0")
+        ex.compile(state)
+        println("  putfield " + f + " " + Jasmin.typecast(types(id)))
+      }
+      case Local(n) => {
+        println("  ;TODO Put local")       
+      }
+    }
   }
 }

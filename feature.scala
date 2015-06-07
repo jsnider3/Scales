@@ -20,6 +20,10 @@ case class Attribute(name: String, ty: String, init: Option[Expr]) extends Featu
   def load(state: LookupTable) = {
     state.locs(name) = scales.Field(clas + "/" + name)
     state.types(name) = ty
+    if (init != None) {
+//      init.get.compile(state)
+      state.put(name, init.get, state)
+    }
   }
 
 }
@@ -28,7 +32,6 @@ object Jasmin {
 
   def args(tys: List[Typed]) : String = {
     "(" + (tys.map {case Typed(n, ty) => Jasmin.typecast(ty)}).mkString("") + ")"
-
   }
 
   def typecast (ty: String): String = {

@@ -3,6 +3,7 @@ import scala.collection.mutable.Map
 import scales.Log
 import scales.LookupTable
 import scales.Main
+import scales.Scoped
 
 object OP extends Enumeration {
   type OP = Value
@@ -43,7 +44,6 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
       case NOT => println("  ineg")
                   println("  ;TODO Not x")
     }
-    "TODO"
   }
 
 }
@@ -160,7 +160,7 @@ case class Var(id: String) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    state.get(id)
   }
 }
 
@@ -294,6 +294,10 @@ case class Let(name: String, ty:String, body: Option[Expr]) {
     typemap(name) = ty
   }
 
+  def load(state: LookupTable) = {
+    //typemap(name) = ty
+  }
+
   def typecheck(typemap: Map[String, String]) = {
     if (body != None) {
       val bty = body.get.typecheck(typemap)
@@ -309,5 +313,3 @@ case class Let(name: String, ty:String, body: Option[Expr]) {
     println("  ;TODO")
   }
 }
-
-case class Typed(name: String, ty: String)

@@ -3,31 +3,35 @@ import scala.collection.mutable.Map
 import scales.Log
 import scales.LookupTable
 import scales.Main
+import scales.Scoped
+
+case class Typed(name: String, ty: String) 
 
 abstract class Feature
 
-case class Attribute(name: String, ty: String, init: Option[Expr]) extends Feature
-case class Method(name: String, args:List[Typed], ty:String, body: Expr)
-  extends Feature with Typable {
-
+case class Attribute(name: String, ty: String, init: Option[Expr]) extends Feature with Scoped {
+  
   var clas = ""
 
-  def call = {
-    println("  invokevirtual " + clas + "/" + signature)
+  def setClass(typemap: Map[String, String]) = {
+    clas = Main.lookupClass(typemap("self")).get.Name()
   }
 
-  def compile() = {
-    //TODO Needs an arg.
-    printHeader
-    body.compile(new LookupTable())
-    printFooter
+  def load(state: LookupTable) = {
+    state.locs(name) = scales.Field(clas + "/" + name)
+    state.types(name) = ty
   }
 
-  def jasminArgs : String = {
-    "(" + (args.map {case Typed(n, ty) => jasminType(ty)}).mkString("") + ")"
+}
+
+object Jasmin {
+
+  def args(tys: List[Typed]) : String = {
+    "(" + (tys.map {case Typed(n, ty) => Jasmin.typecast(ty)}).mkString("") + ")"
+
   }
 
-  def jasminType (ty: String): String = {
+  def typecast (ty: String): String = {
     if (ty == "Int") {
       "I"
     } else if (ty == "Int[]") {
@@ -40,11 +44,34 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
       ty
     }
   }
+}
+
+case class Method(name: String, args:List[Typed], ty:String, body: Expr)
+  extends Feature with Typable {
+
+  var clas = ""
+
+  def call = {
+    println("  invokevirtual " + clas + "/" + signature)
+  }
+
+  def compile(state: LookupTable) = {
+    val scope = loadArgs(state)
+    printHeader
+    body.compile(scope)
+    printFooter
+  }
+
+
+  def loadArgs(state: LookupTable) : LookupTable = {
+    //TODO
+    state
+  }
 
   def setClass(cls: String) = clas = cls
 
   def signature : String = {
-    name + jasminArgs + jasminType(ty)
+    name + Jasmin.args(args) + Jasmin.typecast(ty)
   }
 
   def typecheck(state: Map[String, String]) : String = {

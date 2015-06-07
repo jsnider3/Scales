@@ -2,7 +2,7 @@ package scales
 import scales.exprs._
 import scala.collection.mutable.Map
 
-class Cls (name: String, parent: String, feats: List[Feature]){
+class Cls (name: String, parent: String, feats: List[Feature]) {
 
   override def toString() = ("class " + name + " inherits " + parent + " {" +
                               feats.mkString("; ") + "}")
@@ -19,7 +19,7 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     val ours = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
     for (Attribute(n, t, _) <- ours) {
-      println("  .field private " + n + " " + jvmtype(t))
+      println("  .field private " + n + " " + Jasmin.typecast(t))
     }
     if (name == "Main") {
       println(".method public static main([Ljava/lang/String;)V")
@@ -34,22 +34,17 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     println(".method public <init>()V")
     println("  aload_0")
     println("  invokespecial " + parent + "/<init>()V")
+    //TODO Init attributes.
     println("  return")
     println(".end method")
-    getMethods().foreach{_.compile}
+    val state = (new LookupTable()).enterScope(getAttributes(Main.prog))
+    getMethods().foreach{_.compile(state)}
     Console.setOut(stdout)
   }
 
-  def jvmtype(ty: String) : String = {
-    ty match {
-      case "Int" => "I"
-      case "String" => "Ljava/lang/String;"
-    }
-  }
-
-  def getAttributes(prog: List[Cls]) : Map[String, String] = {
+  def getAttributeMap(prog: List[Cls]) : Map[String, String] = {
     var attrs = if (hasSuper()) {
-      getSuper(prog).get.getAttributes(prog)
+      getSuper(prog).get.getAttributeMap(prog)
     } else {
       Map[String, String]()
     }
@@ -62,6 +57,17 @@ class Cls (name: String, parent: String, feats: List[Feature]){
       attrs(n) = t
     }
     attrs
+  }
+
+  def getAttributes(prog: List[Cls]) : List[Attribute] = {
+    val attrs = if (hasSuper()) {
+      getSuper(prog).get.getAttributes(prog)
+    } else {
+      List[Attribute]()
+    }
+    val ours = feats.filter(_.isInstanceOf[Attribute]) map
+                             (_.asInstanceOf[Attribute])
+    attrs.filter(!ours.contains(_)) ++ ours
   }
   
   def getMethod(name : String) : Option[Method] = {
@@ -97,10 +103,12 @@ class Cls (name: String, parent: String, feats: List[Feature]){
       if (hasSuper() && getSuper(Main.prog) == None) {
         Log.error(Name() + " inherits from undefined " + Parent())
       }
-      var typemap = getAttributes(Main.prog)
+      var typemap = getAttributeMap(Main.prog)
       typemap("self") = Name()
       
       getMethods().foreach{_.typecheck(typemap)}
+      (feats.filter(_.isInstanceOf[Attribute]) map
+                             (_.asInstanceOf[Attribute])) map (_.setClass(typemap))
     }
   }
 }

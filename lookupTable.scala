@@ -1,8 +1,14 @@
 package scales
+import scala.collection.mutable.Map
+import scales.exprs.Jasmin
+
+trait Scoped {
+  def load(state: LookupTable)
+}
 
 abstract class Pos
 case class Local(v : Int) extends Pos
-case class Field() extends Pos
+case class Field(f : String) extends Pos
 
 class LookupTable {
 
@@ -10,35 +16,31 @@ class LookupTable {
   var parent : Option[LookupTable] = None
   var types = Map[String, String]()
 
-  def copy(orig: LookupTable) : LookupTable = {
-    var cp = new LookupTable()
-    cp.locs = this.locs
-    cp.parent = this.parent
-    cp.types = this.types
-    cp
+  def enterScope(defs: List[Scoped]) : LookupTable = {
+    val child = new LookupTable()
+    child.locs = Map[String, Pos]()
+    child.types = Map[String, String]()
+    defs map (_.load(child))
+    child
   }
 
-  def enterScope(/*defs: List[Def]*/) = {
-    //TODO 
-    parent = Some(copy(this))
-    locs = Map[String, Pos]()
-    types = Map[String, String]()
-  }
-
-  def exitScope = {
-    if (parent == None) {
-      locs = Map[String, Pos]()
-      types = Map[String, String]()
-    } else {
-     locs = parent.get.locs 
-     types = parent.get.types 
-     parent = parent.get.parent
-    }
+  def enterScope(pos: Map[String, Pos], tys: Map[String, String]) : LookupTable = {
+    val child = new LookupTable()
+    child.locs = pos
+    child.types = tys
+    child
   }
 
   def get(id: String) = {
-    //TODO 
-    //Do something like `types(id) + "load_" + locs(id)`
+    locs(id) match {
+      case Field(f) => {
+        println("  aload_0")
+        println("  getfield " + f + " " + Jasmin.typecast(types(id)))
+      }
+      case Local(n) => {
+        println("  ;TODO Get local")       
+      }
+    }
 
   }
 

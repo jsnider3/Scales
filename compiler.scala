@@ -22,16 +22,17 @@ object Main {
     println("  return")
     println(".end method")
     println("")
-    println(".method public out_string(Ljava/lang/String;)V")
+    println(".method public out_string(Ljava/lang/String;)Ljava/lang/String;")
     println("  .limit locals 32")
     println("  .limit stack 32")
     println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
     println("  aload_1")
     println("  invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V")
-    println("  return")
+    println("  aload_1")
+    println("  areturn")
     println(".end method")
     println("")
-    println(".method public out_int(I)V")
+    println(".method public out_int(I)I")
     println("  .limit locals 32")
     println("  .limit stack 32")
     println("  iload_1")
@@ -40,7 +41,8 @@ object Main {
     println("  getstatic java/lang/System/out Ljava/io/PrintStream;")
     println("  aload_2")
     println("  invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V")
-    println("  return")
+    println("  iload_1")
+    println("  ireturn")
     println(".end method")
     println("")
     println(".method public in_string()Ljava/lang/String;")
@@ -77,12 +79,7 @@ object Main {
     var found = false
     val Main = prog.find({_.Name() == "Main"})
     if (Main != None) {
-      for (feat <- Main.get.Feats()) {
-        feat match {
-          case Method("main", _, _, _) => found = true 
-          case _ =>
-        }
-      }
+      found = Main.get.getMethods().find(_.name == "main") != None
     }
     found
   }
@@ -97,12 +94,17 @@ object Main {
     val tyArr = new Cls(builtins(2), "", List())
     val tyStr = new Cls(builtins(3), "", List())
     val abort = Method("abort", List(), builtins(4), Constant("Int", "0"))
+    abort.setClass(builtins(4))
     val in_int = Method("in_int", List(),"Int", Constant("Int", "0"))
+    in_int.setClass(builtins(4))
     val in_string = Method("in_string", List(),"String", Constant("Int", "0"))
-    val out_int = Method("out_int", List(Attribute("", "Int")),"Int",
+    in_string.setClass(builtins(4))
+    val out_int = Method("out_int", List(Typed("", "Int")),"Int",
       Constant("Int", "0"))
-    val out_string = Method("out_string", List(Attribute("", "String")),
+    out_int.setClass(builtins(4))
+    val out_string = Method("out_string", List(Typed("", "String")),
       "String", Constant("Int", "0"))
+    out_string.setClass(builtins(4))
     val tyObj = new Cls(builtins(4), "", List(abort, in_int, in_string, out_int,
       out_string))
     List[Cls](tyBool, tyInt, tyArr, tyStr, tyObj) ++ clses

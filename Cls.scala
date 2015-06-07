@@ -16,14 +16,18 @@ class Cls (name: String, parent: String, feats: List[Feature]){
       case _ => println(".super " + parent)
     }
     //TODO Output fields.
+    val ours = feats.filter(_.isInstanceOf[Attribute]) map
+                             (_.asInstanceOf[Attribute])
+    for (Attribute(n, t, _) <- ours) {
+      println("  .field private " + n + " " + jvmtype(t))
+    }
     if (name == "Main") {
       println(".method public static main([Ljava/lang/String;)V")
-      println("  .limit locals 32")
-      println("  .limit stack 32")
+      println("  .limit stack 2")
       println("  new Main")
       println("  dup")
       println("  invokespecial Main/<init>()V")
-      println("  invokevirtual Main/main()V")
+      getMethod("main").get.call
       println("  return")
       println(".end method")
     }
@@ -36,6 +40,13 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     Console.setOut(stdout)
   }
 
+  def jvmtype(ty: String) : String = {
+    ty match {
+      case "Int" => "I"
+      case "String" => "Ljava/lang/String;"
+    }
+  }
+
   def getAttributes(prog: List[Cls]) : Map[String, String] = {
     var attrs = if (hasSuper()) {
       getSuper(prog).get.getAttributes(prog)
@@ -44,7 +55,7 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     }
     val ours = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
-    for (Attribute(n,t) <- ours) {
+    for (Attribute(n, t, _) <- ours) {
       if (attrs.contains(n)) {
         Log.error("Duplicate field " + n + " in class " + name + ".")
       }
@@ -53,16 +64,14 @@ class Cls (name: String, parent: String, feats: List[Feature]){
     attrs
   }
   
-  def getMethod(name : String) : Method = {
+  def getMethod(name : String) : Option[Method] = {
     val found = getMethods().find({_.name == name})
     if (found != None) {
-      found.get
+      found
     } else if (hasSuper()){
       getSuper(Main.prog).get.getMethod(name)
     } else {
-      println(Main.prog map {_.Name()})
-      throw new IllegalArgumentException("Non-existent method " + name
-                                          + " in object " + Name())
+      None
     }
   }
 

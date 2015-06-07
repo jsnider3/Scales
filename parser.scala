@@ -11,7 +11,8 @@ class Comp extends RegexParsers with PackratParsers {
   }
 
   def bool:PackratParser[Expr] = "(true)|(false)".r  ^^ {
-    s => Constant("Bool", s)
+    case "true" => Constant("Bool", "1")
+    case "false" => Constant("Bool", "0")
   }
 
   def str_const:PackratParser[Expr] = "\"[^\"]*\"".r  ^^ {
@@ -27,7 +28,7 @@ class Comp extends RegexParsers with PackratParsers {
     s => Var(s)
   }
 
-  def asgn:PackratParser[Expr] = ident ~ ("<-" ~> expr)  ^^ {
+  def asgn:PackratParser[Expr] = varname ~ ("<-" ~> expr)  ^^ {
     case a ~ b => Asgn(a, b)
   }
 
@@ -47,11 +48,11 @@ class Comp extends RegexParsers with PackratParsers {
 
   //Methods and objects
 
-  def call:PackratParser[Expr] = ident ~ ("(" ~> exprlist <~ ")") ^^ {
+  def call:PackratParser[Expr] = varname ~ ("(" ~> exprlist <~ ")") ^^ {
     case (a ~ b) => MethodCall(a, b)
   }
 
-  def classcall:PackratParser[Expr] = expr ~ "." ~ ident ~ "(" ~ exprlist <~ ")" ^^ {
+  def classcall:PackratParser[Expr] = expr ~ "." ~ varname ~ "(" ~ exprlist <~ ")" ^^ {
     case a ~ _ ~ b ~ _ ~ c => ClassCall(a, b, c)
   }
 
@@ -119,12 +120,12 @@ class Comp extends RegexParsers with PackratParsers {
 
   lazy val letasgn: PackratParser[Let] = (
     varname ~ (":" ~> typename <~ "<-") ~ expr) ^^ {
-    case i ~ t ~ e => LetAsgn(i, t, e)
+    case i ~ t ~ e => Let(i, t, Some(e))
   }
 
   lazy val letpln: PackratParser[Let] = (
     varname ~ (":" ~> typename)) ^^ {
-    case i ~ t => LetPln(i, t)
+    case i ~ t => Let(i, t, None)
   }
 
   lazy val letlist: PackratParser[List[Let]] = repsep(letasgn | letpln, ",")
@@ -158,22 +159,36 @@ class Comp extends RegexParsers with PackratParsers {
     s => s
   } 
 
-  lazy val args: PackratParser[List[Attribute]] = repsep(attribute, ",")
+  lazy val args: PackratParser[List[Typed]] = repsep(typedVar, ",")
 
   lazy val method: PackratParser[Method] = (
-    varname ~ ("(" ~> args <~ ")" <~ ":") ~ typename ~ ("{" ~> expr <~ "}")) ^^ {
+    varname ~ ("(" ~> args <~ ")" <~ ":") ~ typename ~ (expr)) ^^ {
     case s ~ f ~ t ~ e => Method(s, f, t, e)
   }
     
+  lazy val typedVar: PackratParser[Typed] = (
+    varname ~ (":" ~> "Int" ~> "[" ~> "]") |
+    varname ~ (":" ~> typename)) ^^ {
+    case s ~ "]" => Typed(s, "Int[]")
+    case s ~ t => Typed(s, t)
+  }
+
   lazy val attribute: PackratParser[Attribute] = (
     varname ~ (":" ~> "Int" ~> "[" ~> "]") |
     varname ~ (":" ~> typename)) ^^ {
-    case s ~ "]" => Attribute(s, "Int[]")
-    case s ~ t => Attribute(s, t)
+    case s ~ "]" => Attribute(s, "Int[]", None)
+    case s ~ t => Attribute(s, t, None)
+  }
+
+  lazy val definedAttribute: PackratParser[Attribute] = (
+    varname ~ (":" ~> "Int" ~> "[" ~> "]") ~ ("<-" ~> expr) |
+    varname ~ (":" ~> typename) ~ ("<-" ~> expr)) ^^ {
+    case s ~ "]" ~ e => Attribute(s, "Int[]", Some(e))
+    case s ~ t ~ e => Attribute(s, t, Some(e))
   }
 
   lazy val features: PackratParser[List[Feature]] = (
-    rep((attribute | method) <~ ";"))
+    rep((definedAttribute | attribute | method) <~ ";"))
 
   lazy val cls: PackratParser[Cls] = (
     "class" ~> typename ~ ("{" ~> features <~ "}"))  ^^{

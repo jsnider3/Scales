@@ -4,3 +4,4 @@ find out soon.
 * Case classes are the Scala way to do ADT.
 * Scala `Seq` and `List` have lengthCompare methods, to check if
   something's length is </> a certain value. This is weirdly optimized.
+* `None.get` throws an exception, as expected.

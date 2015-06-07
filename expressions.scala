@@ -1,19 +1,26 @@
 package scales.exprs
 import scala.collection.mutable.Map
-import scales.Main
 import scales.Log
+import scales.LookupTable
+import scales.Main
 
 object OP extends Enumeration {
   type OP = Value
+  //TODO Add VOID.
   val VOID, PLUS, MINUS, MULT, DIV, CMP, NOT,
       NE, GT, GE, LT, LE, EQ = Value
 }
 import OP._
 
-trait Expr {
-  def typecheck(typemap: Map[String, String]) : String
-  def compile(state: Map[String, String]) : String
+trait Compilable {
+  def compile(state: LookupTable)
 }
+
+trait Typable {
+  def typecheck(typemap: Map[String, String]) : String
+}
+
+trait Expr extends Compilable with Typable
 
 case class UnaOp(op: OP.Value, x: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
@@ -29,7 +36,13 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
     }
   }
 
-  def compile(state: Map[String, String]) : String = {
+  def compile(state: LookupTable) = {
+    x.compile(state)
+    op match {
+      case CMP => println("  ineg")
+      case NOT => println("  ineg")
+                  println("  ;TODO Not x")
+    }
     "TODO"
   }
 
@@ -48,8 +61,22 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
     }
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    x.compile(state)
+    y.compile(state)
+    op match {
+      case PLUS => println("  iadd")
+      case MINUS => println("  isub")
+      case MULT =>  println("  imul")
+      case DIV =>  println("  idiv")
+
+      case NE => println("  ;TODO")
+      case GT => println("  ;TODO")
+      case GE => println("  ;TODO")
+      case LT => println("  ;TODO")
+      case LE => println("  ;TODO")
+      case EQ => println("  ;TODO")
+    }
   }
 
 }
@@ -57,8 +84,8 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
 case class Constant(ty: String, con: String) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = ty
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ldc " + con)
   }
 
 }
@@ -72,8 +99,8 @@ case class While(grd: Expr, bod: Expr) extends Expr {
     "Int"
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 
 }
@@ -86,8 +113,8 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
     bod.typecheck(letstate)
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 
 }
@@ -97,8 +124,8 @@ case class Seq(bod: List[Expr]) extends Expr {
     (bod map {_.typecheck(typemap)}).last
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    bod.foreach{_.compile(state)}
   }
 
 }
@@ -116,8 +143,8 @@ case class If(gd: Expr, then: Expr, els: Expr) extends Expr {
     tys(0)
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 
 }
@@ -132,22 +159,23 @@ case class Var(id: String) extends Expr {
     }
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 }
 
-case class Asgn(id: Expr, rval: Expr) extends Expr {
+case class Asgn(id: String, rval: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
-    val tys = List(id.typecheck(typemap), rval.typecheck(typemap))
+    val tys = List(typemap(id), rval.typecheck(typemap))
     if (tys(0) != tys(1)) {
       Log.error("Assignment to " + tys(0) + " " + id + " of type " + tys(1))
     }
     tys(1)
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    rval.compile(state)
+    state.put(id)
   }
 }
 
@@ -166,8 +194,8 @@ case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
     "Int"
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 }
 
@@ -180,8 +208,8 @@ case class ArrDec(size: Expr) extends Expr {
     "Int[]"
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 }
 
@@ -193,163 +221,93 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
     "Int"
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  ;TODO")
   }
 }
 
-trait Callable {
-  def typecheckCall(meth: Method, args: List[Expr], typemap: Map[String, String]) = {
+trait Callable extends Expr{
+
+  var meth : Option[Method] = None
+
+  def typecheckCall(args: List[Expr], typemap: Map[String, String]) = {
     val vals = args map {_.typecheck(typemap)}
-    if (vals.length != meth.args.length) {
-      Log.error("Method call on " + meth + " has wrong number of args.")
+    if (vals.length != meth.get.args.length) {
+      Log.error("Method call on " + meth.get + " has wrong number of args.")
     }
-    val bindings = meth.args zip vals
-    bindings.foreach{case (Attribute(n, t), v) => if (v != t) {
+    val bindings = meth.get.args zip vals
+    bindings.foreach{case (Typed(n, t), v) => if (v != t) {
       Log.error("Arg of wrong type")
     }}
   }
 
-  def compile(state: Map[String, String]) : String
+  def compileCall(args: List[Expr], state: LookupTable) = {
+    args.foreach{_.compile(state)}
+    meth.get.call
+  }
+
 }
 
-case class MethodCall(id: Expr, args: List[Expr]) extends Expr with Callable {
+case class MethodCall(id: String, args: List[Expr]) extends  Callable {
   def typecheck(typemap: Map[String, String]) : String = {
     val cls = Main.prog.find({_.Name() == typemap("self")}).get
-    id match {
-      case Var(n) => {
-        val meth = cls.getMethod(n)
-        typecheckCall(meth, args, typemap)
-        meth.ty
-      }
-      case _ => {
-        Log.error("Method call on non-method " + id)
-        "UCObject"
-      }
+    meth = cls.getMethod(id)
+    if (meth != None) {
+      typecheckCall(args, typemap)
+    } else {
+      Log.error("Could not find method " + id + ".")
     }
+    meth.get.ty
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    println("  aload_0")
+    compileCall(args, state)
   }
 }
 
-case class ClassCall(self: Expr, id: Expr, args: List[Expr]) extends Expr
-                                                             with Callable{
+case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable {
   def typecheck(typemap: Map[String, String]) : String = {
-    (self, id) match {
-      case (Var(c), Var(m)) => {
-        val clsopt = Main.prog.find({_.Name() == c})
-        if (clsopt == None) {
-          Log.error("class call on non-existent " + c + ".")
-        }
-        val meth = clsopt.get.getMethod(m)
-        typecheckCall(meth, args, typemap)
-        meth.ty
-      }
-      case _ => {
-        Log.error("Inappropriate class call. " + self + " and "
-                    + id + " must be ids.")
-        "UCObject"
-      }
+    val name = self.typecheck(typemap)
+    val clsopt = Main.prog.find({_.Name() == name})
+    if (clsopt == None) {
+      Log.error("class call on non-existent " + name + ".")
     }
+    //TODO Check the method exists.
+    meth = clsopt.get.getMethod(id)
+    if (meth != None) {
+      typecheckCall(args, typemap)
+    } else {
+      Log.error("Could not find method " + id + ".")
+    }
+    meth.get.ty
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
-  }
-}
-
-trait Let {
-  def load(typemap: Map[String, String])
-  def typecheck(typemap: Map[String, String]) : String
-  def compile(state: Map[String, String]) : String
-}
-
-case class LetPln(name: String, ty: String) extends Let {
-  def load(typemap: Map[String, String]) = {
-    typemap(name) = ty
-  }
-
-  def typecheck(typemap: Map[String, String]) = ty
-
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    self.compile(state)
+    compileCall(args, state)
   }
 }
 
-case class LetAsgn(name: String, ty:String, body: Expr) extends Let {
+case class Let(name: String, ty:String, body: Option[Expr]) {
   def load(typemap: Map[String, String]) = {
     typemap(name) = ty
   }
 
   def typecheck(typemap: Map[String, String]) = {
-    val bty = body.typecheck(typemap)
-    if (bty != ty) {
-      Log.error("Let " + name + " is not of declared type.")
+    if (body != None) {
+      val bty = body.get.typecheck(typemap)
+      if (bty != ty) {
+        Log.error("Let " + name + " is not of declared type.")
+      }
     }
     ty
   }
 
-  def compile(state: Map[String, String]) : String = {
-    "TODO"
+  def compile(state: LookupTable) = {
+    if (body == None)
+    println("  ;TODO")
   }
 }
 
-abstract class Feature
-
-case class Attribute(name: String, ty: String) extends Feature
-case class Method(name: String, args:List[Attribute], ty:String, body: Expr)
-  extends Feature {
-
-  var clas = ""
-
-  def compile() = {
-    printHeader()
-    //TODO main has to be compiled specially.
-    body.compile(Map[String,String]())
-    println("  return")
-    println(".end method")
-  }
-
-  def jasminArgs : String = {
-    //TODO
-    "()"
-  }
-
-  def jasminType : String = {
-    //TODO 
-    "V"
-  }
-
-  def typecheck(state: Map[String, String]) = {
-    var methodState = state.clone()
-    var argNames = List[String]()
-    for(arg <- args)
-    {
-      //UncoolAid 2.1.2 says that method params hide attrbiutes.
-      if(argNames.contains(arg.name))
-      {
-        Log.error("Duplicate " + arg.name + " in " + name + " args.")
-      }
-      argNames +:= arg.name
-      methodState(arg.name) = arg.ty
-    }
-    val bty = body.typecheck(methodState);
-    if(bty != ty)
-    {
-      Log.error(name + " returns " + bty + " declares " + ty)
-    }
-    clas = Main.lookupClass(state("self")).get.Name()
-  }
-
-  def printHeader() = {
-    //TODO Args and return type.
-    println(".method public " + name + jasminArgs + jasminType)
-    println("  .limit locals 32")
-    println("  .limit stack 32")
-  }
-
-}
-
-
+case class Typed(name: String, ty: String)

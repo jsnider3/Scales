@@ -48,14 +48,12 @@ class Main {
     };
 
     main () : Int { 
-      {
-         out_string("Number of elements ");
-         size <- in_int();
-         x <- new Int[size];
-         get_input(size);
-         sort(x,size);
-	 out_string("\nresult: ");
-         print_input(size)
-      }
+      out_string("Number of elements ");
+      size <- in_int();
+      x <- new Int[size];
+      get_input(size);
+      sort(x,size);
+	    out_string("\nresult: ");
+      print_input(size)
     };
 }

@@ -52,8 +52,8 @@ class Comp extends RegexParsers with PackratParsers {
     case (a ~ b) => MethodCall(a, b)
   }
 
-  def classcall:PackratParser[Expr] = expr ~ "." ~ varname ~ "(" ~ exprlist <~ ")" ^^ {
-    case a ~ _ ~ b ~ _ ~ c => ClassCall(a, b, c)
+  def classcall:PackratParser[Expr] = (expr <~ ".") ~ varname ~ ("(" ~> exprlist <~ ")") ^^ {
+    case a ~ b ~ c => ClassCall(a, b, c)
   }
 
   // Arithmetic
@@ -114,8 +114,8 @@ class Comp extends RegexParsers with PackratParsers {
 
   //Control structures
   lazy val ifelse: PackratParser[Expr] = (
-    "if" ~> expr ~ "then" ~ expr ~ "else" ~ expr <~ "fi") ^^ {
-    case a ~ _ ~ b ~ _ ~ c => If(a, b, c) 
+    "if" ~> expr ~ ("then" ~> expr) ~ ("else" ~> expr <~ "fi")) ^^ {
+    case a ~ b ~ c => If(a, b, c) 
   }
 
   lazy val letasgn: PackratParser[Let] = (
@@ -147,7 +147,7 @@ class Comp extends RegexParsers with PackratParsers {
   }
 
   lazy val expr: PackratParser[Expr] = (
-    add | div | mult | sub |
+    add | sub | mult | div |
     not | les | leq | neq | gre | geq |eql | isvoid |
     call | classcall | 
     integer | bool | parens | str_const |

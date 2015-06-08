@@ -1,8 +1,10 @@
 package scales.exprs
 import scala.collection.mutable.Map
+import scales.Local
 import scales.Log
 import scales.LookupTable
 import scales.Main
+import scales.Pos
 import scales.Scoped
 
 case class Typed(name: String, ty: String) 
@@ -21,7 +23,6 @@ case class Attribute(name: String, ty: String, init: Option[Expr]) extends Featu
     state.locs(name) = scales.Field(clas + "/" + name)
     state.types(name) = ty
     if (init != None) {
-//      init.get.compile(state)
       state.put(name, init.get, state)
     }
   }
@@ -40,7 +41,7 @@ object Jasmin {
     } else if (ty == "Int[]") {
       "[I"
     } else if (ty == "Bool") {
-      "TODO Bool return"
+      "I"
     } else if (ty == "String") {
       "Ljava/lang/String;"
     } else {
@@ -67,8 +68,14 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
 
 
   def loadArgs(state: LookupTable) : LookupTable = {
-    //TODO
-    state
+    val toLoad = List(Typed("self", clas)) ++ args
+    val pos = Map[String, Pos]()
+    val tys = Map[String, String]()
+    toLoad.zipWithIndex.foreach{ case (Typed(n, t), i) =>
+      pos(n) = Local(i)
+      tys(n) = t    
+    }
+    state.enterScope(pos, tys) 
   }
 
   def setClass(cls: String) = clas = cls
@@ -100,11 +107,10 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   }
 
   def printFooter = {
-    //TODO Typed returns.
     if (ty == "Int") {
       println("  ireturn")
     } else if (ty == "Bool") {
-      println(";TODO Bool return")
+      println("  ireturn")
     } else {
       println("  areturn")
     }

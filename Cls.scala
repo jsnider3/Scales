@@ -15,7 +15,6 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       case "" => println(".super UCObject")
       case _ => println(".super " + parent)
     }
-    //TODO Output fields.
     val ours = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
     for (Attribute(n, t, _) <- ours) {
@@ -89,7 +88,12 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
   def getMethods() : List[Method] = {
    val methods = feats.filter(_.isInstanceOf[Method]) map
                              (_.asInstanceOf[Method])
-    //TODO Check for duplicates.
+    methods.foreach{ a =>
+      if (methods.count(b => b.name == a.name) > 1) {
+        Log.error("Duplicate method " + a.name)
+      }
+      methods
+    }
     methods
   }
 

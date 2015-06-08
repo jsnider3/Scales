@@ -7,7 +7,6 @@ import scales.Scoped
 
 object OP extends Enumeration {
   type OP = Value
-  //TODO Add VOID.
   val VOID, PLUS, MINUS, MULT, DIV, CMP, NOT,
       NE, GT, GE, LT, LE, EQ = Value
 }
@@ -41,8 +40,8 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
     x.compile(state)
     op match {
       case CMP => println("  ineg")
-      case NOT => println("  ineg")
-                  println("  ;TODO Not x")
+      case NOT => println("  ;TODO Not x")
+      case VOID => println("  ;TODO isVoid x")
     }
   }
 
@@ -64,18 +63,19 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
   def compile(state: LookupTable) = {
     x.compile(state)
     y.compile(state)
+    println("  ;" + this)
     op match {
       case PLUS => println("  iadd")
       case MINUS => println("  isub")
       case MULT =>  println("  imul")
       case DIV =>  println("  idiv")
 
-      case NE => println("  ;TODO")
-      case GT => println("  ;TODO")
-      case GE => println("  ;TODO")
-      case LT => println("  ;TODO")
-      case LE => println("  ;TODO")
-      case EQ => println("  ;TODO")
+      case NE => println("  ;TODO neg ")
+      case GT => println("  ;TODO gt")
+      case GE => println("  ;TODO ge")
+      case LT => println("  ;TODO lt")
+      case LE => println("  ;TODO le")
+      case EQ => println("  ;TODO eq")
     }
   }
 
@@ -100,7 +100,15 @@ case class While(grd: Expr, bod: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    println("  ;TODO Label: startloop")
+    //TODO Optimize ifs for OpExpr guard.
+    grd match { 
+      case _ => grd.compile(state)
+                println("  ;TODO ifnonzero endloop")
+    }
+    bod.compile(state)
+    println("  ;TODO jmp startloop")
+    println("  ;TODO endloop")
   }
 
 }
@@ -114,7 +122,7 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    println("  ;TODO letx")
   }
 
 }
@@ -144,9 +152,12 @@ case class If(gd: Expr, then: Expr, els: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    gd.compile(state)
+    println("  ;TODO ifnonzero else")
+    then.compile(state)
+    println("  ;TODO jmp endif")
+    els.compile(state)
   }
-
 }
 
 case class Var(id: String) extends Expr {
@@ -194,7 +205,7 @@ case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    println("  ;TODO id[ind] = rval")
   }
 }
 
@@ -208,7 +219,8 @@ case class ArrDec(size: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    size.compile(state)
+    println("  inewarray")
   }
 }
 
@@ -221,7 +233,7 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO")
+    println("  ;TODO arrget")
   }
 }
 
@@ -272,7 +284,6 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
     if (clsopt == None) {
       Log.error("class call on non-existent " + name + ".")
     }
-    //TODO Check the method exists.
     meth = clsopt.get.getMethod(id)
     if (meth != None) {
       typecheckCall(args, typemap)
@@ -309,6 +320,6 @@ case class Let(name: String, ty:String, body: Option[Expr]) {
 
   def compile(state: LookupTable) = {
     if (body == None)
-    println("  ;TODO")
+    println("  ;TODO let")
   }
 }

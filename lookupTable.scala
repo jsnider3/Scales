@@ -22,6 +22,7 @@ class LookupTable {
     child.locs = Map[String, Pos]()
     child.types = Map[String, String]()
     defs map (_.load(child))
+    child.parent = Some(this)
     child
   }
 
@@ -29,31 +30,57 @@ class LookupTable {
     val child = new LookupTable()
     child.locs = pos
     child.types = tys
+    child.parent = Some(this)
     child
   }
 
   def get(id: String) = {
-    locs(id) match {
+    getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
-        println("  getfield " + f + " " + Jasmin.typecast(types(id)))
+        println("  getfield " + f + " " + Jasmin.typecast(getType(id)))
       }
       case Local(n) => {
-        println("  ;TODO Get local")       
+        getType(id) match {
+          //DEBUG Int[] may be a special case.
+          case "Int" => println("  iload_" + n)
+          case "Bool" => println("  iload_" + n)
+          case _ => println("  aload_" + n)
+        }
       }
     }
+  }
 
+  def getLoc(id: String) : Pos = {
+    if (locs.contains(id)) {
+      locs(id)
+    } else {
+      parent.get.getLoc(id)
+    }
+  }
+
+  def getType(id: String) : String = {
+    if (types.contains(id)) {
+      types(id)
+    } else {
+      parent.get.getType(id)
+    }
   }
 
   def put(id: String, ex: Expr, state: LookupTable) = {
-     locs(id) match {
+     getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
         ex.compile(state)
-        println("  putfield " + f + " " + Jasmin.typecast(types(id)))
+        println("  putfield " + f + " " + Jasmin.typecast(getType(id)))
       }
       case Local(n) => {
-        println("  ;TODO Put local")       
+        getType(id) match {
+          //DEBUG Int[] may be a special case.
+          case "Int" => println("  istore_" + n)
+          case "Bool" => println("  istore_" + n)
+          case _ => println("  astore_" + n)
+        }
       }
     }
   }

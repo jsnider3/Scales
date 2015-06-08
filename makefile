@@ -1,7 +1,7 @@
 FILE='tests/in/test1.uc'
 TEST='scala scales.Main ${FILE}'
 
-all: scales
+all:
 	scalac *scala
 	@eval ${TEST}
 

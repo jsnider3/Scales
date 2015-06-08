@@ -6,7 +6,7 @@ class Main {
    };
     main () : Int {
       {y <- 9;
-      x <- print_fn( 42*x+(y-4));
+      x <- print_fn((42 * x) + (y - 4));
       out_int(x)
       }
     };

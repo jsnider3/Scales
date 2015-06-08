@@ -13,13 +13,16 @@ jasmin *.j
 java -verify Main > out.txt
 [[ -z `diff out.txt tests/out/test2.out` ]] || exit
 rm -f *.class *.j
+echo "test3.uc"
 scala scales.Main "tests/in/test3.uc"
 jasmin *.j
 java -verify Main > out.txt
 [[ -z `diff out.txt tests/out/test3.out` ]] || exit
 rm -f *.class *.j
-#scala scales.Main "tests/in/test4.uc"
-#rm -f *.class *.j
+scala scales.Main "tests/in/test4.uc"
+jasmin *.j
+#java -verify Main > out.txt
+rm -f *.class *.j
 #scala scales.Main "tests/in/test5.uc"
 #rm -f *.class *.j
 #scala scales.Main "tests/in/test6.uc"

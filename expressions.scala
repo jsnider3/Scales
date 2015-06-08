@@ -12,6 +12,29 @@ object OP extends Enumeration {
 }
 import OP._
 
+object Counters {
+  
+  var cmps = 0
+  var ifs = 0
+  var whiles = 0
+
+  def nextCmp : Int = {
+    cmps = cmps + 1
+    cmps
+  }
+
+  def nextIf : Int = {
+    ifs = ifs + 1
+    ifs
+  }
+
+  def nextWhile : Int = {
+    whiles = whiles + 1
+    whiles
+  }
+}
+
+
 trait Compilable {
   def compile(state: LookupTable)
 }
@@ -70,13 +93,26 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
       case MULT =>  println("  imul")
       case DIV =>  println("  idiv")
 
-      case NE => println("  ;TODO neg ")
-      case GT => println("  ;TODO gt")
-      case GE => println("  ;TODO ge")
-      case LT => println("  ;TODO lt")
-      case LE => println("  ;TODO le")
-      case EQ => println("  ;TODO eq")
+      case _ => makeComparison()
     }
+  }
+
+  def makeComparison() = {
+    val count = Counters.nextCmp
+    val check = op match {
+      case NE => "if_icmpne"
+      case GT => "if_icmpgt"
+      case GE => "if_icmpge"
+      case LT => "if_icmplt"
+      case LE => "if_icmple"
+      case EQ => "if_icmpeq"
+    }
+    println("  " + check + " true" + count)
+    println("  ldc 0")
+    println("  goto endcmp" + count) 
+    println("true" + count + ":")
+    println("  ldc 1")
+    println("endcmp" + count + ":")
   }
 
 }
@@ -90,7 +126,43 @@ case class Constant(ty: String, con: String) extends Expr {
 
 }
 
-case class While(grd: Expr, bod: Expr) extends Expr {
+trait Guarded extends Expr {
+  //TODO Make stack heights consistent.
+  //TODO Optimize for OpExprs.
+  def compileGuard(grd: Expr, target: String, state: LookupTable) = {
+    grd match { 
+      case _ => grd.compile(state)
+                println("  ifeq " + target)
+    }
+  }
+
+}
+
+case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
+  def typecheck(typemap: Map[String, String]) : String = {
+    if (gd.typecheck(typemap) != "Bool") {
+      Log.error("If guard " + gd + " non-bool.")
+    }
+    val tys = List(then.typecheck(typemap.clone()), els.typecheck(typemap.clone()))
+    //TODO Common types.
+    if (tys(0) != tys(1)) {
+      Log.error("If branches of differing types.")
+    }
+    tys(0)
+  }
+
+  def compile(state: LookupTable) = {
+    val count = Counters.nextWhile
+    compileGuard(gd, "Else" + count, state)
+    then.compile(state)
+    println("  goto Endif" + count)
+    println("  Else" + count+":")
+    els.compile(state)
+    println("  Endif" + count + ":")
+  }
+}
+
+case class While(grd: Expr, bod: Expr) extends Guarded {
   def typecheck(typemap: Map[String, String]) : String = {
     if (grd.typecheck(typemap) != "Bool") {
       Log.error("While guard " + grd + " non-bool.")
@@ -100,15 +172,12 @@ case class While(grd: Expr, bod: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO Label: startloop")
-    //TODO Optimize ifs for OpExpr guard.
-    grd match { 
-      case _ => grd.compile(state)
-                println("  ;TODO ifnonzero endloop")
-    }
+    val count = Counters.nextWhile
+    println("  Startloop" + count + ":")
+    compileGuard(grd, "Endloop" + count, state)
     bod.compile(state)
-    println("  ;TODO jmp startloop")
-    println("  ;TODO endloop")
+    println("  goto Startloop" + count)
+    println("  Endloop" + count + ":")
   }
 
 }
@@ -136,28 +205,6 @@ case class Seq(bod: List[Expr]) extends Expr {
     bod.foreach{_.compile(state)}
   }
 
-}
-
-case class If(gd: Expr, then: Expr, els: Expr) extends Expr {
-  def typecheck(typemap: Map[String, String]) : String = {
-    if (gd.typecheck(typemap) != "Bool") {
-      Log.error("If guard " + gd + " non-bool.")
-    }
-    val tys = List(then.typecheck(typemap.clone()), els.typecheck(typemap.clone()))
-    //TODO Common types.
-    if (tys(0) != tys(1)) {
-      Log.error("If branches of differing types.")
-    }
-    tys(0)
-  }
-
-  def compile(state: LookupTable) = {
-    gd.compile(state)
-    println("  ;TODO ifnonzero else")
-    then.compile(state)
-    println("  ;TODO jmp endif")
-    els.compile(state)
-  }
 }
 
 case class Var(id: String) extends Expr {

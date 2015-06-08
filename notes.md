@@ -10,3 +10,13 @@ params explicitly.
 * `new` - does what `new` does.
 * `goto` and `if*` - are branches and loops.
 * `invokevirtual` and `invokenonvirtual` - are for methods.
+
+
+### Stack inconsistency
+
+The Inconsistent stack height error is caused by different branches,
+pushing/popping different amounts. `compile` should probably have an `Int`
+as its return type which can be used by ifs/whiles to add
+necessary pops/dups. Since we can't take back printing. We can insert
+pops/dups at the end of the else cases in if statements and we should only
+need to add pops at the end of while bodies.

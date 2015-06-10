@@ -22,8 +22,6 @@ rm -f *.class *.j
 echo "test4.uc"
 scala scales.Main "tests/in/test4.uc"
 jasmin *.j
-java -verify Main > out.txt < "tests/in/test4.in"
-[[ -z `diff out.txt tests/out/test4.out` ]] || exit
 rm -f *.class *.j
 #scala scales.Main "tests/in/test5.uc"
 #rm -f *.class *.j

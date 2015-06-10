@@ -1,13 +1,13 @@
 class Main {
     y : Int ;
     x : Int ;
-    factorial(a: Int) : Int {
-       if a < 2 then 1 else factorial(a-1) + factorial(a-2)
+    fibonacci(a: Int) : Int {
+       if a < 2 then 1 else fibonacci(a - 1) + fibonacci(a - 2)
        fi
    };
     main () : Int {
       {y <- in_int();
-      x <-factorial(y);
+      x <- fibonacci(y);
       out_int(x)
       }
     };

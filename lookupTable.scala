@@ -1,7 +1,7 @@
 package scales
 import scala.collection.mutable.Map
 import scales.exprs.Expr
-import scales.exprs.Jasmin
+import scales.exprs.Jas
 
 trait Scoped {
   def load(state: LookupTable)
@@ -38,7 +38,7 @@ class LookupTable {
     getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
-        println("  getfield " + f + " " + Jasmin.typecast(getType(id)))
+        println("  getfield " + f + " " + Jas.typecast(getType(id)))
       }
       case Local(n) => {
         getType(id) match {
@@ -72,7 +72,7 @@ class LookupTable {
       case Field(f) => {
         println("  aload_0")
         ex.compile(state)
-        println("  putfield " + f + " " + Jasmin.typecast(getType(id)))
+        println("  putfield " + f + " " + Jas.typecast(getType(id)))
       }
       case Local(n) => {
         getType(id) match {

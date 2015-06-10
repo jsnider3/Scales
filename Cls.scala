@@ -18,7 +18,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     val ours = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
     for (Attribute(n, t, _) <- ours) {
-      println("  .field private " + n + " " + Jasmin.typecast(t))
+      println("  .field private " + n + " " + Jas.typecast(t))
     }
     if (name == "Main") {
       println(".method public static main([Ljava/lang/String;)V")

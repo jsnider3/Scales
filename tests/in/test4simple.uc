@@ -7,7 +7,6 @@ class Main {
       while i < 5 loop {
         out_int(i);
         i <- i + 1
-      } pool;
-      2
+      } pool
     };
 }

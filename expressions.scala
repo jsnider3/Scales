@@ -36,7 +36,7 @@ object Counters {
 
 
 trait Compilable {
-  def compile(state: LookupTable)
+  def compile(state: LookupTable) : Int
 }
 
 trait Typable {
@@ -66,6 +66,7 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
       case NOT => println("  ;TODO Not x")
       case VOID => println("  ;TODO isVoid x")
     }
+    1
   }
 
 }
@@ -95,6 +96,7 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
 
       case _ => makeComparison()
     }
+    1
   }
 
   def makeComparison() = {
@@ -122,6 +124,7 @@ case class Constant(ty: String, con: String) extends Expr {
 
   def compile(state: LookupTable) = {
     println("  ldc " + con)
+    1 
   }
 
 }
@@ -131,9 +134,28 @@ trait Guarded extends Expr {
   //TODO Optimize for OpExprs.
   def compileGuard(grd: Expr, target: String, state: LookupTable) = {
     grd match { 
+      case OpExpr(NE, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmpeq " + target)
+      case OpExpr(GT, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmple " + target)
+      case OpExpr(GE, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmplt " + target)
+      case OpExpr(LT, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmpge " + target)
+      case OpExpr(LE, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmpgt " + target)
+      case OpExpr(EQ, a, b) => a.compile(state)
+        b.compile(state)
+        println("  if_icmpne " + target)
       case _ => grd.compile(state)
                 println("  ifeq " + target)
     }
+    0
   }
 
 }
@@ -159,6 +181,7 @@ case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
     println("  Else" + count+":")
     els.compile(state)
     println("  Endif" + count + ":")
+    0
   }
 }
 
@@ -178,6 +201,8 @@ case class While(grd: Expr, bod: Expr) extends Guarded {
     bod.compile(state)
     println("  goto Startloop" + count)
     println("  Endloop" + count + ":")
+    println("  ldc 0")
+    1
   }
 
 }
@@ -192,6 +217,7 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     println("  ;TODO letx")
+    0
   }
 
 }
@@ -202,7 +228,9 @@ case class Seq(bod: List[Expr]) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    bod.foreach{_.compile(state)}
+    bod.reverse.tail.reverse.foreach{x => Jas.pop(x.compile(state))}
+    bod.last.compile(state)
+    1
   }
 
 }
@@ -219,6 +247,7 @@ case class Var(id: String) extends Expr {
 
   def compile(state: LookupTable) = {
     state.get(id)
+    1
   }
 }
 
@@ -233,6 +262,7 @@ case class Asgn(id: String, rval: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     state.put(id, rval, state)
+    0
   }
 }
 
@@ -253,6 +283,7 @@ case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     println("  ;TODO id[ind] = rval")
+    0
   }
 }
 
@@ -268,6 +299,7 @@ case class ArrDec(size: Expr) extends Expr {
   def compile(state: LookupTable) = {
     size.compile(state)
     println("  inewarray")
+    1
   }
 }
 
@@ -281,6 +313,7 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     println("  ;TODO arrget")
+    1
   }
 }
 
@@ -318,9 +351,10 @@ case class MethodCall(id: String, args: List[Expr]) extends  Callable {
     meth.get.ty
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable) : Int = {
     println("  aload_0")
     compileCall(args, state)
+    1
   }
 }
 
@@ -340,9 +374,10 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
     meth.get.ty
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable) : Int = {
     self.compile(state)
     compileCall(args, state)
+    1
   }
 }
 

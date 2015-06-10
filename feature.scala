@@ -29,10 +29,16 @@ case class Attribute(name: String, ty: String, init: Option[Expr]) extends Featu
 
 }
 
-object Jasmin {
+object Jas {
 
   def args(tys: List[Typed]) : String = {
-    "(" + (tys.map {case Typed(n, ty) => Jasmin.typecast(ty)}).mkString("") + ")"
+    "(" + (tys.map {case Typed(n, ty) => Jas.typecast(ty)}).mkString("") + ")"
+  }
+
+  def pop (n: Int) = {
+    for (i <- 1 to n) {
+      println("  pop")
+    }
   }
 
   def typecast (ty: String): String = {
@@ -81,7 +87,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   def setClass(cls: String) = clas = cls
 
   def signature : String = {
-    name + Jasmin.args(args) + Jasmin.typecast(ty)
+    name + Jas.args(args) + Jas.typecast(ty)
   }
 
   def typecheck(state: Map[String, String]) : String = {

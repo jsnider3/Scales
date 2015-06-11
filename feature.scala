@@ -51,7 +51,7 @@ object Jas {
     } else if (ty == "String") {
       "Ljava/lang/String;"
     } else {
-      ty
+      "L" + ty + ";"
     }
   }
 }
@@ -62,7 +62,11 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   var clas = ""
 
   def call = {
-    println("  invokevirtual " + clas + "/" + signature)
+    if (name == "init") {
+      println("  invokespecial " + clas + "/" + signature)
+    } else {
+      println("  invokevirtual " + clas + "/" + signature)
+    }
   }
 
   def compile(state: LookupTable) = {
@@ -87,7 +91,11 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   def setClass(cls: String) = clas = cls
 
   def signature : String = {
-    name + Jas.args(args) + Jas.typecast(ty)
+    if (name == "init") {
+      "<" + name + ">" + Jas.args(args) + "V"
+    } else {
+      name + Jas.args(args) + Jas.typecast(ty)
+    }
   }
 
   def typecheck(state: Map[String, String]) : String = {
@@ -113,7 +121,9 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   }
 
   def printFooter = {
-    if (ty == "Int") {
+    if (name == "init") {
+      println("  return")
+    } else if (ty == "Int") {
       println("  ireturn")
     } else if (ty == "Bool") {
       println("  ireturn")

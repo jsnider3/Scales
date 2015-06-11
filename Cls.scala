@@ -21,17 +21,22 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       println("  .field private " + n + " " + Jas.typecast(t))
     }
     if (name == "Main") {
-      println(".method public static main([Ljava/lang/String;)V")
-      println("  .limit stack 2")
-      println("  new Main")
-      println("  dup")
-      println("  invokespecial Main/<init>()V")
-      getMethod("main").get.call
-      println("  return")
-      println(".end method")
+      compileMain()
     }
-    println(".method public <init>()V")
-    println("  .limit stack 4")
+    val state = compileInit()
+    getMethods().filter(a => a.name != "init").foreach{_.compile(state)}
+    Console.setOut(stdout)
+  }
+
+  def compileInit() : LookupTable = {
+    val initmeth = getMethod("init")
+    if (initmeth == None) {
+      println(".method public <init>()V")
+    } else {
+      println(".method public " + initmeth.get.signature)
+    }
+    println("  .limit stack 32")
+    println("  .limit locals 32")
     println("  aload_0")
     println("  invokespecial " + parent + "/<init>()V")
     val parScope = if (hasSuper()) {
@@ -40,10 +45,30 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       new LookupTable()
     }
     val state = parScope.enterScope(getAttributes(Main.prog))
+    val initstate = if (initmeth != None) {
+      initmeth.get.loadArgs(state)
+    } else {
+      state
+    }
+    //TODO FIXME Needs to do what the init method says if it has it.
+    //TODO This totally fucks up the state.
+    if (initmeth != None) {
+      initmeth.get.body.compile(initstate)
+    }
     println("  return")
     println(".end method")
-    getMethods().foreach{_.compile(state)}
-    Console.setOut(stdout)
+    state
+  }
+
+  def compileMain() = {
+    println(".method public static main([Ljava/lang/String;)V")
+    println("  .limit stack 2")
+    println("  new Main")
+    println("  dup")
+    println("  invokespecial Main/<init>()V")
+    getMethod("main").get.call
+    println("  return")
+    println(".end method")
   }
 
   def getAttributeMap(prog: List[Cls]) : Map[String, String] = {

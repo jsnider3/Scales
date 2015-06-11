@@ -35,7 +35,7 @@ class Main {
     st: Stack;
     x : Int;
     main () : Int {
-      st = new Stack(10);
+      st <- new Stack(10);
       st.push(2);
       st.push(3);
       st.push(5);

@@ -75,7 +75,7 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
   def typecheck(typemap: Map[String, String]) : String = {
     val tys = Array(x.typecheck(typemap), y.typecheck(typemap))
     if (tys(0) != tys(1) || tys(1) != "Int") {
-      Log.error(op + " needs two ints.")
+      Log.error(op + " needs two ints, but has " + x + " " + y)
     }
     if (op == NE || op == GT || op == GE || op == LT || op == LE || op == EQ) {
       "Bool"
@@ -288,7 +288,10 @@ case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO id[ind] = rval")
+    id.compile(state)
+    ind.compile(state)
+    rval.compile(state)
+    println("  iastore")
     0
   }
 }
@@ -304,24 +307,23 @@ case class ArrDec(size: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     size.compile(state)
-    println("  inewarray")
+    println("  newarray int")
     1
   }
 }
 
-case class ClassDec(ty:String, args: List[Expr]) extends Expr {
+case class ClassDec(ty:String, args: List[Expr]) extends Callable {
   def typecheck(typemap: Map[String, String]) : String = {
-    /*val ty = size.typecheck(typemap)
-    if (ty != "Int") {
-      Log.error("New array declared with size of type " + ty + ".")
-    }
-    "Int[]"*/
+    val cls = Main.prog.find({_.Name() == ty}).get
+    meth = cls.getMethod("init")
+    typecheckCall(args, typemap)
     ty
   }
 
   def compile(state: LookupTable) = {
-    //size.compile(state)
-    println("  inewarray")
+    println("  new " + ty)
+    println("  dup")
+    compileCall(args, state)
     1
   }
 }
@@ -334,7 +336,9 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO arrget")
+    id.compile(state)
+    ind.compile(state)
+    println("  iaload")
     1
   }
 }

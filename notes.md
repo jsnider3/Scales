@@ -23,4 +23,10 @@ need to add pops at the end of while bodies. This problem is now solved.
 
 ### Variable limits.
 There's a limit to how many variables can be stored in "pseudo-registers",
-this will also be a major annoyance.
+this will also be a major annoyance. This was actually wrong and it's just
+the dedicated instructions aload_0, aload_1, etc that only go so far.
+After that you have to do load #.
+
+### Current challenge.
+Assignments need to leave their values on the stack, which will make the 
+code much uglier.

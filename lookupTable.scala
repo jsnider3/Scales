@@ -54,8 +54,10 @@ class LookupTable {
   def getLoc(id: String) : Pos = {
     if (locs.contains(id)) {
       locs(id)
-    } else {
+    } else if (parent != None) {
       parent.get.getLoc(id)
+    } else {
+      throw new RuntimeException("Can't find " + id)
     }
   }
 
@@ -82,7 +84,7 @@ class LookupTable {
   }
 
   def put(id: String, ex: Expr) = {
-     getLoc(id) match {
+    getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
         ex.compile(this)
@@ -99,5 +101,4 @@ class LookupTable {
     }
   }
 
-  //TODO put array
 }

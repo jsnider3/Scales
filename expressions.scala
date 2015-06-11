@@ -63,7 +63,7 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
     x.compile(state)
     op match {
       case CMP => println("  ineg")
-      case NOT => println("  ;TODO Not x")
+      case NOT => println("  ineg")
       case VOID => println("  ;TODO isVoid x")
     }
     1
@@ -135,7 +135,6 @@ case class Constant(ty: String, con: String) extends Expr {
 }
 
 trait Guarded extends Expr {
-  //TODO Make stack heights consistent.
   //TODO Optimize for OpExprs.
   def compileGuard(grd: Expr, target: String, state: LookupTable) = {
     grd match { 
@@ -435,8 +434,4 @@ case class Let(name: String, ty:String, body: Option[Expr]) extends Scoped {
     ty
   }
 
-  def compile(state: LookupTable) = {
-    if (body == None)
-    println("  ;TODO let")
-  }
 }

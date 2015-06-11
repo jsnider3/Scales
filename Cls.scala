@@ -9,7 +9,8 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
 
   def compile () {
     val stdout = Console.out
-    Console.setOut(new java.io.FileOutputStream(name + ".j"))
+    val fileout = new java.io.FileOutputStream(name + ".j")
+    Console.setOut(fileout)
     println(".class public " + name)
     parent match {
       case "" => println(".super UCObject")
@@ -26,6 +27,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     val state = compileInit()
     getMethods().filter(a => a.name != "init").foreach{_.compile(state)}
     Console.setOut(stdout)
+    fileout.close()
   }
 
   def compileInit() : LookupTable = {
@@ -50,8 +52,6 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     } else {
       state
     }
-    //TODO FIXME Needs to do what the init method says if it has it.
-    //TODO This totally fucks up the state.
     if (initmeth != None) {
       initmeth.get.body.compile(initstate)
     }

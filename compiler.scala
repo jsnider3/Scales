@@ -8,9 +8,9 @@ object Main {
   val builtins = List("Bool", "Int", "Int[]", "String", "UCObject")
 
   def compileObjectClass = {
-    //TODO Close file output.
     val stdout = Console.out
-    Console.setOut(new java.io.FileOutputStream("UCObject.j"))
+    val fileout = new java.io.FileOutputStream("UCObject.j")
+    Console.setOut(fileout)
     println(".class public UCObject")
     println(".super java/lang/Object")
     println("")
@@ -73,6 +73,7 @@ object Main {
     println("  return")
     println(".end method")
     Console.setOut(stdout)
+    fileout.close()
   }
 
   def findMain(prog: List[Cls]) : Boolean = {

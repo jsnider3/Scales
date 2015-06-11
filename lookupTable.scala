@@ -21,8 +21,8 @@ class LookupTable {
     val child = new LookupTable()
     child.locs = Map[String, Pos]()
     child.types = Map[String, String]()
-    defs map (_.load(child))
     child.parent = Some(this)
+    defs map (_.load(child))
     child
   }
 
@@ -43,9 +43,9 @@ class LookupTable {
       case Local(n) => {
         getType(id) match {
           //DEBUG Int[] may be a special case.
-          case "Int" => println("  iload_" + n)
-          case "Bool" => println("  iload_" + n)
-          case _ => println("  aload_" + n)
+          case "Int" => println("  iload " + n)
+          case "Bool" => println("  iload " + n)
+          case _ => println("  aload " + n)
         }
       }
     }
@@ -67,21 +67,37 @@ class LookupTable {
     }
   }
 
-  def put(id: String, ex: Expr, state: LookupTable) = {
+  def nextLocal () : Local = {
+    if (locs.isEmpty && parent == None) {
+      Local(1)
+    } else if (locs.isEmpty) {
+      parent.get.nextLocal()
+    } else {
+      val allocs = locs.values map (a => a match {
+        case Field(b) => 0
+        case Local(n) => n 
+      })
+      Local(allocs.max + 1)
+    }
+  }
+
+  def put(id: String, ex: Expr) = {
      getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
-        ex.compile(state)
+        ex.compile(this)
         println("  putfield " + f + " " + Jas.typecast(getType(id)))
       }
       case Local(n) => {
+        ex.compile(this)
         getType(id) match {
-          //DEBUG Int[] may be a special case.
-          case "Int" => println("  istore_" + n)
-          case "Bool" => println("  istore_" + n)
-          case _ => println("  astore_" + n)
+          case "Int" => println("  istore " + n)
+          case "Bool" => println("  istore " + n)
+          case _ => println("  astore " + n)
         }
       }
     }
   }
+
+  //TODO put array
 }

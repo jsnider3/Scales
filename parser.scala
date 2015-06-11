@@ -15,6 +15,10 @@ class Comp extends RegexParsers with PackratParsers {
     case "false" => Constant("Bool", "0")
   }
 
+  def null_const:PackratParser[Expr] = "null".r  ^^ {
+    a => Constant("Object", "null")
+  }
+
   def str_const:PackratParser[Expr] = "\"[^\"]*\"".r  ^^ {
     s => Constant("String", s)
   }
@@ -150,7 +154,7 @@ class Comp extends RegexParsers with PackratParsers {
     add | sub | mult | div |
     not | les | leq | neq | gre | geq |eql | isvoid |
     call | classcall | 
-    integer | bool | parens | str_const |
+    integer | bool | parens | str_const | null_const |
     lets | loop | seq | ifelse | 
     asgn | arrasgn | arrdec | arrget | ident 
   )

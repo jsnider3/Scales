@@ -23,11 +23,18 @@ echo "test4.uc"
 scala scales.Main "tests/in/test4.uc"
 jasmin *.j
 rm -f *.class *.j
-#scala scales.Main "tests/in/test5.uc"
-#rm -f *.class *.j
-#scala scales.Main "tests/in/test6.uc"
-#rm -f *.class *.j
+echo "test5.uc"
+scala scales.Main "tests/in/test5.uc"
+jasmin *.j
+rm -f *.class *.j
+echo "test6.uc"
+scala scales.Main "tests/in/test6.uc"
+jasmin *.j
+java -verify Main > out.txt
+[[ -z `diff out.txt tests/out/test6.out` ]] || exit
+rm -f *.class *.j
 #scala scales.Main "tests/in/test7.uc"
 #rm -f *.class *.j
 ##scala scales.Main "tests/in/sort.uc"
 #rm -f *.class *.j
+echo "HOORAY!"

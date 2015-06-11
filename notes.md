@@ -19,4 +19,8 @@ pushing/popping different amounts. `compile` should probably have an `Int`
 as its return type which can be used by ifs/whiles to add
 necessary pops/dups. Since we can't take back printing. We can insert
 pops/dups at the end of the else cases in if statements and we should only
-need to add pops at the end of while bodies.
+need to add pops at the end of while bodies. This problem is now solved.
+
+### Variable limits.
+There's a limit to how many variables can be stored in "pseudo-registers",
+this will also be a major annoyance.

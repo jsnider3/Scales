@@ -123,7 +123,12 @@ case class Constant(ty: String, con: String) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = ty
 
   def compile(state: LookupTable) = {
-    println("  ldc " + con)
+    println("  ;constant " + con)
+    if (con == "null") {
+      println(" aconst_null")
+    } else {
+      println("  ldc " + con)
+    }
     1 
   }
 
@@ -216,8 +221,9 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    println("  ;TODO letx")
-    0
+    val letstate = state.enterScope(lets)
+    println("; inscope")
+    bod.compile(letstate)
   }
 
 }
@@ -261,7 +267,7 @@ case class Asgn(id: String, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    state.put(id, rval, state)
+    state.put(id, rval)
     0
   }
 }
@@ -381,13 +387,22 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
   }
 }
 
-case class Let(name: String, ty:String, body: Option[Expr]) {
+case class Let(name: String, ty:String, body: Option[Expr]) extends Scoped {
   def load(typemap: Map[String, String]) = {
     typemap(name) = ty
   }
 
   def load(state: LookupTable) = {
-    //typemap(name) = ty
+    println("  ;load " + this)
+    state.types(name) = ty
+    state.locs(name) = state.nextLocal()
+    if (body != None) {
+      state.put(name, body.get)
+    } else if (ty == "Int" || ty == "Bool") {
+      state.put(name, Constant(ty, "0"))
+    } else {
+      state.put(name, Constant("Object", "null"))
+    }
   }
 
   def typecheck(typemap: Map[String, String]) = {

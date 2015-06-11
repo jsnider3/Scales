@@ -23,7 +23,7 @@ case class Attribute(name: String, ty: String, init: Option[Expr]) extends Featu
     state.locs(name) = scales.Field(clas + "/" + name)
     state.types(name) = ty
     if (init != None) {
-      state.put(name, init.get, state)
+      state.put(name, init.get)
     }
   }
 

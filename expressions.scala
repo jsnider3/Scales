@@ -135,7 +135,6 @@ case class Constant(ty: String, con: String) extends Expr {
 }
 
 trait Guarded extends Expr {
-  //TODO Optimize for OpExprs.
   def compileGuard(grd: Expr, target: String, state: LookupTable) = {
     grd match { 
       case OpExpr(NE, a, b) => a.compile(state)
@@ -202,7 +201,7 @@ case class While(grd: Expr, bod: Expr) extends Guarded {
     val count = Counters.nextWhile
     println("  Startloop" + count + ":")
     compileGuard(grd, "Endloop" + count, state)
-    bod.compile(state)
+    Jas.pop(bod.compile(state))
     println("  goto Startloop" + count)
     println("  Endloop" + count + ":")
     println("  ldc 0")
@@ -288,12 +287,15 @@ case class ArrAsgn(id: String, ind: Expr, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
+    //TODO This code is terrible.
     state.get(id)
     ind.compile(state)
     rval.compile(state)
+    println("  dup")
+    println("  istore 31")
     println("  iastore")
-    //TODO Return the value stored.
-    0
+    println("  iload 31")
+    1
   }
 }
 
@@ -414,7 +416,6 @@ case class Let(name: String, ty:String, body: Option[Expr]) extends Scoped {
   }
 
   def load(state: LookupTable) = {
-    println("  ;load " + this)
     state.types(name) = ty
     state.locs(name) = state.nextLocal()
     if (body != None) {

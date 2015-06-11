@@ -41,5 +41,6 @@ java -verify Main > out.txt
 rm -f *.class *.j
 echo "sort.uc"
 scala scales.Main "tests/in/sort.uc"
+jasmin *.j
 rm -f *.class *.j
 echo "HOORAY!"

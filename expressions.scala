@@ -309,6 +309,22 @@ case class ArrDec(size: Expr) extends Expr {
   }
 }
 
+case class ClassDec(ty:String, args: List[Expr]) extends Expr {
+  def typecheck(typemap: Map[String, String]) : String = {
+    /*val ty = size.typecheck(typemap)
+    if (ty != "Int") {
+      Log.error("New array declared with size of type " + ty + ".")
+    }
+    "Int[]"*/
+    ty
+  }
+
+  def compile(state: LookupTable) = {
+    //size.compile(state)
+    println("  inewarray")
+    1
+  }
+}
 case class ArrGet(id: Expr, ind: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     if (ind.typecheck(typemap) != "Int") {

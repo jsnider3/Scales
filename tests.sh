@@ -33,8 +33,10 @@ jasmin *.j
 java -verify Main > out.txt
 [[ -z `diff out.txt tests/out/test6.out` ]] || exit
 rm -f *.class *.j
-#scala scales.Main "tests/in/test7.uc"
-#rm -f *.class *.j
-##scala scales.Main "tests/in/sort.uc"
-#rm -f *.class *.j
+echo "test7.uc"
+scala scales.Main "tests/in/test7.uc"
+rm -f *.class *.j
+echo "sort.uc"
+scala scales.Main "tests/in/sort.uc"
+rm -f *.class *.j
 echo "HOORAY!"

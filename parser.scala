@@ -24,7 +24,7 @@ class Comp extends RegexParsers with PackratParsers {
   }
 
   //Var stuff
-  def varname:PackratParser[String] = "[a-z][A-Za-z0-9_]*".r  ^^ {
+  def varname:PackratParser[String] = "[A-Za-z][A-Za-z0-9_]*".r  ^^ {
     s => s
   }
 
@@ -42,6 +42,10 @@ class Comp extends RegexParsers with PackratParsers {
 
   def arrdec:PackratParser[Expr] = "new" ~> "Int" ~> "[" ~> expr <~ "]" ^^ {
     a => ArrDec(a)
+  }
+
+  def classdec:PackratParser[Expr] = "new" ~> varname ~ ( "(" ~> exprlist <~ ")" ) ^^ {
+    case a ~ b => ClassDec(a, b)
   }
 
   def arrasgn:PackratParser[Expr] = ident ~ ("[" ~> expr <~ "]" <~ "<-") ~ expr  ^^ {
@@ -151,11 +155,11 @@ class Comp extends RegexParsers with PackratParsers {
   }
 
   lazy val expr: PackratParser[Expr] = (
-    add | sub | mult | div |
+    add | sub | mult | div | cmp |
     not | les | leq | neq | gre | geq |eql | isvoid |
-    call | classcall | 
+    ifelse | call | classcall | classdec | 
     integer | bool | parens | str_const | null_const |
-    lets | loop | seq | ifelse | 
+    lets | loop | seq | //ifelse | 
     asgn | arrasgn | arrdec | arrget | ident 
   )
 

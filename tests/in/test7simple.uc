@@ -14,20 +14,18 @@ class Stack {
     if top < size then {
       st[top] <- item;
       top <- top + 1
-    } else ~1 fi
+    } else 1 fi
    };
 
    pop() : Int {
      if (0 < top) then {
         top <- top - 1;
         st[top]
-     } else ~1 fi
+     } else 1 fi
    };
 
    top() : Int {
-     if (0 < top) then {
-        st[top - 1]
-     } else ~1 fi
+     st[top - 1]
    };
 }
 

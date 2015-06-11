@@ -48,7 +48,7 @@ class Comp extends RegexParsers with PackratParsers {
     case a ~ b => ClassDec(a, b)
   }
 
-  def arrasgn:PackratParser[Expr] = ident ~ ("[" ~> expr <~ "]" <~ "<-") ~ expr  ^^ {
+  def arrasgn:PackratParser[Expr] = varname ~ ("[" ~> expr <~ "]" <~ "<-") ~ expr  ^^ {
     case a ~ b ~ c => ArrAsgn(a, b, c)
   }
 

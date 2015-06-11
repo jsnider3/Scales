@@ -267,13 +267,14 @@ case class Asgn(id: String, rval: Expr) extends Expr {
 
   def compile(state: LookupTable) = {
     state.put(id, rval)
-    0
+    state.get(id)
+    1
   }
 }
 
-case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
+case class ArrAsgn(id: String, ind: Expr, rval: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
-    val tys = List(id.typecheck(typemap), ind.typecheck(typemap), rval.typecheck(typemap))
+    val tys = List(typemap(id), ind.typecheck(typemap), rval.typecheck(typemap))
     if (tys(0) != "Int[]") {
       Log.error("Array assignment to non-array.")
     }
@@ -287,10 +288,11 @@ case class ArrAsgn(id: Expr, ind: Expr, rval: Expr) extends Expr {
   }
 
   def compile(state: LookupTable) = {
-    id.compile(state)
+    state.get(id)
     ind.compile(state)
     rval.compile(state)
     println("  iastore")
+    //TODO Return the value stored.
     0
   }
 }

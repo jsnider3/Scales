@@ -35,6 +35,9 @@ java -verify Main > out.txt
 rm -f *.class *.j
 echo "test7.uc"
 scala scales.Main "tests/in/test7.uc"
+jasmin *.j
+java -verify Main > out.txt
+[[ -z `diff out.txt tests/out/test7.out` ]] || exit
 rm -f *.class *.j
 echo "sort.uc"
 scala scales.Main "tests/in/sort.uc"

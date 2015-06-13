@@ -7,40 +7,25 @@ import scales.Main
 import scales.Pos
 import scales.Scoped
 
+/** Tags a variable with a type. */
 case class Typed(name: String, ty: String) 
 
-abstract class Feature
-
-case class Attribute(name: String, ty: String, init: Option[Expr]) extends Feature with Scoped {
-  
-  var clas = ""
-
-  def setClass(typemap: Map[String, String]) = {
-    clas = Main.lookupClass(typemap("self")).get.Name()
-  }
-
-  def load(state: LookupTable) = {
-    state.locs(name) = scales.Field(clas + "/" + name)
-    state.types(name) = ty
-    if (init != None) {
-      state.put(name, init.get)
-    }
-  }
-
-}
-
+/** Utilities for working with Jasmin. */
 object Jas {
 
+  /** Make the args of a method into a string for Jasmin. */
   def args(tys: List[Typed]) : String = {
     "(" + (tys.map {case Typed(n, ty) => Jas.typecast(ty)}).mkString("") + ")"
   }
 
+  /** Pop n variables off the stack. */
   def pop (n: Int) = {
     for (i <- 1 to n) {
       println("  pop")
     }
   }
 
+  /** Format the type in a way that Jasmin wants. */
   def typecast (ty: String): String = {
     if (ty == "Int") {
       "I"
@@ -56,11 +41,35 @@ object Jas {
   }
 }
 
+abstract class Feature
+
+/** Attribute feature of a class. */
+case class Attribute(name: String, ty: String, init: Option[Expr]) extends Feature with Scoped {
+  
+  var clas = ""
+
+  def setClass(typemap: Map[String, String]) = {
+    clas = Main.lookupClass(typemap("self")).get.Name()
+  }
+
+  /** Add this Attribute to a state. Compile it if necessary. */
+  def load(state: LookupTable) = {
+    state.locs(name) = scales.Field(clas + "/" + name)
+    state.types(name) = ty
+    if (init != None) {
+      state.put(name, init.get)
+    }
+  }
+
+}
+
+/** Method feature of a class. */
 case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   extends Feature with Typable {
 
   var clas = ""
 
+  /** Print the code to invoke this method. */
   def call = {
     if (name == "init") {
       println("  invokespecial " + clas + "/" + signature)
@@ -69,6 +78,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     }
   }
 
+  /** Compile this by printing its body surrounding by boilerplate. */
   def compile(state: LookupTable) = {
     val scope = loadArgs(state)
     printHeader
@@ -76,7 +86,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     printFooter
   }
 
-
+  /** Make the LookupTable used to compile this method. */
   def loadArgs(state: LookupTable) : LookupTable = {
     val toLoad = List(Typed("self", clas)) ++ args
     val pos = Map[String, Pos]()
@@ -88,8 +98,13 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     state.enterScope(pos, tys) 
   }
 
+  /** Store the class this method is part of.
+   *
+   * We need this to be compiled properly.
+   */
   def setClass(cls: String) = clas = cls
 
+  /** Make the LookupTable used to compile this method. */
   def signature : String = {
     if (name == "init") {
       "<" + name + ">" + Jas.args(args) + "V"
@@ -98,6 +113,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     }
   }
 
+  /** Typecheck the method and log errors. */
   def typecheck(state: Map[String, String]) : String = {
     var methodState = state.clone()
     var argNames = List[String]()
@@ -120,6 +136,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     ty
   }
 
+  /** Return from the method. */
   def printFooter = {
     if (name == "init") {
       println("  return")
@@ -133,6 +150,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
     println(".end method")
   }
 
+  /** Print the header and say how much space we will be using. */
   def printHeader = {
     println(".method public " + signature)
     println("  .limit locals 32")

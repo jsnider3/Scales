@@ -2,11 +2,20 @@ package scales
 import exprs._
 import scala.collection.mutable.Map
 
+/** Main program to compile Uncool to Jasmin.
+ *
+ * Parses, typechecks, and outputs Jasmin to files.
+ */
 object Main {
 
   var prog = List[Cls]()
   val builtins = List("Bool", "Int", "Int[]", "String", "UCObject")
 
+  /** Compile UCObject.
+   *
+   * UCObject is the implicit parent of everything without an explicit one.
+   * It's methods are Uncool's version of a standard libary.
+   */
   def compileObjectClass = {
     val stdout = Console.out
     val fileout = new java.io.FileOutputStream("UCObject.j")
@@ -76,6 +85,7 @@ object Main {
     fileout.close()
   }
 
+  /** Check for a Main.main method. */
   def findMain(prog: List[Cls]) : Boolean = {
     var found = false
     val Main = prog.find({_.Name() == "Main"})
@@ -85,10 +95,12 @@ object Main {
     found
   }
 
+  /** Tries to find a class in the program. */
   def lookupClass(name : String) : Option[Cls] = {
     prog.find({_.Name() == name})
   }
 
+  /** Gets the types, methods, and classes built into Uncool. */
   def makeBuiltIns(clses: List[Cls]) : List[Cls] = {
     val tyBool = new Cls(builtins(0), "", List())
     val tyInt = new Cls(builtins(1), "", List())

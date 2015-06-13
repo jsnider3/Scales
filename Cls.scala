@@ -2,11 +2,21 @@ package scales
 import scales.exprs._
 import scala.collection.mutable.Map
 
+/** Implements a class in Uncool.
+ *
+ * A class has a name, an optional parent, and a list of methods and
+ * attributes.
+ */
 class Cls (name: String, parent: String, feats: List[Feature]) {
 
   override def toString() = ("class " + name + " inherits " + parent + " {" +
                               feats.mkString("; ") + "}")
 
+  /** Write the Jasmin code for the class out to a file.
+   *
+   * We emit the header and private fields, then our methods with
+   * main and init methods being special cases.
+   */
   def compile () {
     val stdout = Console.out
     val fileout = new java.io.FileOutputStream(name + ".j")
@@ -30,6 +40,14 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     fileout.close()
   }
 
+
+  /** Compile the classes constructor.
+   *
+   * Required for all classes, some classes explicitly define other things
+   * to do in the constructor.
+   * @return: A LookupTable to be used to compile the classes
+   *          other methods.
+   */
   def compileInit() : LookupTable = {
     val initmeth = getMethod("init")
     if (initmeth == None) {
@@ -60,6 +78,10 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     state
   }
 
+  /** Entry point for running the file.
+   *
+   * Essentially the same as (new Main()).main().
+   */
   def compileMain() = {
     println(".method public static main([Ljava/lang/String;)V")
     println("  .limit stack 2")
@@ -71,6 +93,10 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     println(".end method")
   }
 
+  /** Get all of the attributes of this class as a Map.
+   *
+   * Used by typechecker and logs errors for non-unique attribute names.
+   */
   def getAttributeMap(prog: List[Cls]) : Map[String, String] = {
     var attrs = if (hasSuper()) {
       getSuper(prog).get.getAttributeMap(prog)
@@ -80,7 +106,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     val ours = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
     for (Attribute(n, t, _) <- ours) {
-      if (attrs.contains(n)) {
+      if (ours.count(b => b.name == n) > 1) {
         Log.error("Duplicate field " + n + " in class " + name + ".")
       }
       attrs(n) = t
@@ -88,6 +114,10 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     attrs
   }
 
+  /** Get all of the attributes of this class.
+   *
+   * Includes attributes from supers and shadows them as appropriate.
+   */
   def getAttributes(prog: List[Cls]) : List[Attribute] = {
     val attrs = if (hasSuper()) {
       getSuper(prog).get.getAttributes(prog)
@@ -99,6 +129,10 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     attrs.filter(!ours.contains(_)) ++ ours
   }
   
+  /** Get method in class with a given name.
+   *
+   * Includes shadowing and returns None if not in any scope.
+   */
   def getMethod(name : String) : Option[Method] = {
     val found = getMethods().find({_.name == name})
     if (found != None) {
@@ -110,6 +144,10 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     }
   }
 
+  /** Get all of the methods of this class as a List.
+   *
+   * Used by typechecker and logs errors for non-unique method names.
+   */
   def getMethods() : List[Method] = {
    val methods = feats.filter(_.isInstanceOf[Method]) map
                              (_.asInstanceOf[Method])
@@ -122,6 +160,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     methods
   }
 
+  /** Gets our superclass or None if not in the given program. */
   def getSuper(prog: List[Cls]) : Option[Cls] = {
     prog.find({_.Name() == parent})
   }
@@ -132,6 +171,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
   def Name() = name
   def Parent() = parent
 
+  /** Get the LookupTable from which this class's methods inherit. */
   def state : LookupTable = {
     val attrs = feats.filter(_.isInstanceOf[Attribute]) map
                              (_.asInstanceOf[Attribute])
@@ -149,6 +189,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
     parScope.enterScope(pos, tys) 
   }
 
+  /** Typecheck this class and log any errors. */
   def typecheck() = {
     if (!Main.builtins.contains(name)) {
       if (hasSuper() && getSuper(Main.prog) == None) {

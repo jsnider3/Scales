@@ -12,6 +12,7 @@ object OP extends Enumeration {
 }
 import OP._
 
+/** Counters used to make unique labels. */
 object Counters {
   
   var cmps = 0
@@ -36,6 +37,10 @@ object Counters {
 
 
 trait Compilable {
+  /** Compile this in the given scope.
+   *
+   * @return: The amount of variables that this pushes on the stack.
+   */
   def compile(state: LookupTable) : Int
 }
 
@@ -45,6 +50,7 @@ trait Typable {
 
 trait Expr extends Compilable with Typable
 
+/** Implements expressions of the form "op expr". */
 case class UnaOp(op: OP.Value, x: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     val ty = x.typecheck(typemap)
@@ -71,6 +77,7 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
 
 }
 
+/** Implements expressions of the form "expr op expr". */
 case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
   def typecheck(typemap: Map[String, String]) : String = {
     val tys = Array(x.typecheck(typemap), y.typecheck(typemap))
@@ -119,6 +126,7 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
 
 }
 
+/** Implements expressions of a constant literal. */
 case class Constant(ty: String, con: String) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = ty
 
@@ -134,6 +142,7 @@ case class Constant(ty: String, con: String) extends Expr {
 
 }
 
+/** Expressions that have a guard, like ifs and loops. */
 trait Guarded extends Expr {
   def compileGuard(grd: Expr, target: String, state: LookupTable) = {
     grd match { 
@@ -163,6 +172,7 @@ trait Guarded extends Expr {
 
 }
 
+/** Implements conditional expressions. */
 case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
   def typecheck(typemap: Map[String, String]) : String = {
     if (gd.typecheck(typemap) != "Bool") {
@@ -188,6 +198,7 @@ case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
   }
 }
 
+/** Implements loop expressions. */
 case class While(grd: Expr, bod: Expr) extends Guarded {
   def typecheck(typemap: Map[String, String]) : String = {
     if (grd.typecheck(typemap) != "Bool") {
@@ -210,6 +221,7 @@ case class While(grd: Expr, bod: Expr) extends Guarded {
 
 }
 
+/** Defines local variables in a new scope. */
 case class LetX(lets: List[Let], bod: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     var letstate = typemap.clone()
@@ -226,6 +238,7 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
 
 }
 
+/** A block of expresions. */
 case class Seq(bod: List[Expr]) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     (bod map {_.typecheck(typemap)}).last
@@ -239,6 +252,7 @@ case class Seq(bod: List[Expr]) extends Expr {
 
 }
 
+/** Look up the variable. */
 case class Var(id: String) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     if (!typemap.contains(id)) {
@@ -255,6 +269,7 @@ case class Var(id: String) extends Expr {
   }
 }
 
+/** Assign a value to a variable. */
 case class Asgn(id: String, rval: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     val tys = List(typemap(id), rval.typecheck(typemap))
@@ -271,6 +286,7 @@ case class Asgn(id: String, rval: Expr) extends Expr {
   }
 }
 
+/** Assign a value to an index in an array. */
 case class ArrAsgn(id: String, ind: Expr, rval: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     val tys = List(typemap(id), ind.typecheck(typemap), rval.typecheck(typemap))
@@ -299,6 +315,7 @@ case class ArrAsgn(id: String, ind: Expr, rval: Expr) extends Expr {
   }
 }
 
+/** Create a new array. */
 case class ArrDec(size: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     val ty = size.typecheck(typemap)
@@ -315,6 +332,7 @@ case class ArrDec(size: Expr) extends Expr {
   }
 }
 
+/** Construct a new member of a class. */
 case class ClassDec(ty:String, args: List[Expr]) extends Callable {
   def typecheck(typemap: Map[String, String]) : String = {
     val cls = Main.prog.find({_.Name() == ty}).get
@@ -330,6 +348,8 @@ case class ClassDec(ty:String, args: List[Expr]) extends Callable {
     1
   }
 }
+
+/** Index into an array. */
 case class ArrGet(id: Expr, ind: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
     if (ind.typecheck(typemap) != "Int") {
@@ -346,6 +366,7 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
   }
 }
 
+/** Shared code for calling various types of methods. */
 trait Callable extends Expr{
 
   var meth : Option[Method] = None
@@ -368,6 +389,7 @@ trait Callable extends Expr{
 
 }
 
+/** Call a method on self. */
 case class MethodCall(id: String, args: List[Expr]) extends  Callable {
   def typecheck(typemap: Map[String, String]) : String = {
     val cls = Main.prog.find({_.Name() == typemap("self")}).get
@@ -387,6 +409,7 @@ case class MethodCall(id: String, args: List[Expr]) extends  Callable {
   }
 }
 
+/** Call a method on the given object. */
 case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable {
   def typecheck(typemap: Map[String, String]) : String = {
     val name = self.typecheck(typemap)
@@ -410,6 +433,8 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
   }
 }
 
+/** Define a local variable. */
+case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable {
 case class Let(name: String, ty:String, body: Option[Expr]) extends Scoped {
   def load(typemap: Map[String, String]) = {
     typemap(name) = ty

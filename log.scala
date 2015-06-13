@@ -1,5 +1,6 @@
 package scales
 
+/** Used during typechecking to log errors. */
 object Log {
   
   var errors = List[String]()

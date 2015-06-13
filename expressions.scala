@@ -434,7 +434,6 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
 }
 
 /** Define a local variable. */
-case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable {
 case class Let(name: String, ty:String, body: Option[Expr]) extends Scoped {
   def load(typemap: Map[String, String]) = {
     typemap(name) = ty

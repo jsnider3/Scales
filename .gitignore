@@ -2,3 +2,4 @@ scales
 *.class
 *.j
 out.txt
+target

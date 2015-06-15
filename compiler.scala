@@ -124,7 +124,7 @@ object Main {
   }
 
   def main(args: Array[String]) = {
-    val ast : List[Cls] = Uncool.make_ast(args(0))
+    val ast : List[Cls] = Uncool.make_ast()
     if (!findMain(ast)) {
       Log.error("Main not found.")
     }

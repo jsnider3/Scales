@@ -39,7 +39,7 @@ java -verify Main > out.txt
 [[ -z `diff out.txt tests/out/test7.out` ]] || exit
 rm -f *.class *.j
 echo "sort.uc"
-sbt run < "tests/in/sort.uc"
+sbt -sbt-create run < "tests/in/sort.uc"
 jasmin *.j
 rm -f *.class *.j
 echo "HOORAY!"

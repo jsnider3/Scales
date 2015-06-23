@@ -104,18 +104,18 @@ object Main {
     val tyStr = new Cls(builtins(3), "", List())
     val abort = Method("abort", List(), builtins(4), Constant("Int", "0"))
     abort.setClass(builtins(4))
-    val in_int = Method("in_int", List(),"Int", Constant("Int", "0"))
-    in_int.setClass(builtins(4))
-    val in_string = Method("in_string", List(),"String", Constant("Int", "0"))
-    in_string.setClass(builtins(4))
-    val out_int = Method("out_int", List(Typed("", "Int")),"Int",
+    val inInt = Method("in_int", List(),"Int", Constant("Int", "0"))
+    inInt.setClass(builtins(4))
+    val inString = Method("in_string", List(),"String", Constant("Int", "0"))
+    inString.setClass(builtins(4))
+    val outInt = Method("out_int", List(Typed("", "Int")),"Int",
       Constant("Int", "0"))
-    out_int.setClass(builtins(4))
-    val out_string = Method("out_string", List(Typed("", "String")),
+    outInt.setClass(builtins(4))
+    val outString = Method("out_string", List(Typed("", "String")),
       "String", Constant("Int", "0"))
-    out_string.setClass(builtins(4))
-    val tyObj = new Cls(builtins(4), "", List(abort, in_int, in_string, out_int,
-      out_string))
+    outString.setClass(builtins(4))
+    val tyObj = new Cls(builtins(4), "", List(abort, inInt, inString, outInt,
+      outString))
     List[Cls](tyBool, tyInt, tyArr, tyStr, tyObj) ++ clses
   }
 

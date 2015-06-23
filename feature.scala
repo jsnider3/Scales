@@ -22,16 +22,11 @@ object Jas {
 
   /** Format the type in a way that Jasmin wants. */
   def typecast (ty: String): String = {
-    if (ty == "Int") {
-      "I"
-    } else if (ty == "Int[]") {
-      "[I"
-    } else if (ty == "Bool") {
-      "I"
-    } else if (ty == "String") {
-      "Ljava/lang/String;"
-    } else {
-      "L" + ty + ";"
+    ty match {
+      case "Int" | "Bool" => "I"
+      case "Int[]" => "[I"
+      case "String" => "Ljava/lang/String;"
+      case _ => "L" + ty + ";"
     }
   }
 }

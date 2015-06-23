@@ -1,9 +1,6 @@
 package scales.exprs
 import scala.collection.mutable.Map
-import scales.Log
-import scales.LookupTable
-import scales.Main
-import scales.Scoped
+import scales.{Log, LookupTable, Main, Scoped}
 
 object OP extends Enumeration {
   type OP = Value
@@ -224,7 +221,7 @@ case class While(grd: Expr, bod: Expr) extends Guarded {
 /** Defines local variables in a new scope. */
 case class LetX(lets: List[Let], bod: Expr) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = {
-    var letstate = typemap.clone()
+    val letstate = typemap.clone()
     lets.foreach{_.typecheck(letstate)}
     lets.foreach{_.load(letstate)}
     bod.typecheck(letstate)

@@ -98,7 +98,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
    * Used by typechecker and logs errors for non-unique attribute names.
    */
   def getAttributeMap(prog: List[Cls]) : Map[String, String] = {
-    var attrs = if (hasSuper()) {
+    val attrs = if (hasSuper()) {
       getSuper(prog).get.getAttributeMap(prog)
     } else {
       Map[String, String]()
@@ -195,7 +195,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       if (hasSuper() && getSuper(Main.prog) == None) {
         Log.error(name + " inherits from undefined " + parent)
       }
-      var typemap = getAttributeMap(Main.prog)
+      val typemap = getAttributeMap(Main.prog)
       typemap("self") = name
       
       getMethods().foreach{_.typecheck(typemap)}

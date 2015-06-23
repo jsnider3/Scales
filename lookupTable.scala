@@ -1,7 +1,6 @@
 package scales
 import scala.collection.mutable.Map
-import scales.exprs.Expr
-import scales.exprs.Jas
+import scales.exprs.{Expr, Jas}
 
 /** Scoped represents values that need initial setup. */
 trait Scoped {

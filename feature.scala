@@ -1,11 +1,6 @@
 package scales.exprs
 import scala.collection.mutable.Map
-import scales.Local
-import scales.Log
-import scales.LookupTable
-import scales.Main
-import scales.Pos
-import scales.Scoped
+import scales.{Local, Log, LookupTable, Main, Pos, Scoped}
 
 /** Tags a variable with a type. */
 case class Typed(name: String, ty: String) 
@@ -115,7 +110,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
 
   /** Typecheck the method and log errors. */
   def typecheck(state: Map[String, String]) : String = {
-    var methodState = state.clone()
+    val methodState = state.clone()
     var argNames = List[String]()
     for(arg <- args)
     {

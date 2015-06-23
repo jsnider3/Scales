@@ -86,13 +86,9 @@ object Main {
   }
 
   /** Check for a Main.main method. */
-  def findMain(prog: List[Cls]) : Boolean = {
-    var found = false
-    val Main = prog.find({_.Name() == "Main"})
-    if (Main != None) {
-      found = Main.get.getMethods().find(_.name == "main") != None
-    }
-    found
+  def hasMain(prog: List[Cls]) : Boolean = {
+    val mainClass = prog.find({_.Name() == "Main"})
+    mainClass.get.getMethods().find(_.name == "main") != None
   }
 
   /** Tries to find a class in the program. */
@@ -125,7 +121,7 @@ object Main {
 
   def main(args: Array[String]) = {
     val ast : List[Cls] = Uncool.make_ast()
-    if (!findMain(ast)) {
+    if (!hasMain(ast)) {
       Log.error("Main not found.")
     }
     prog = makeBuiltIns(ast)

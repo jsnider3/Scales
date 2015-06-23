@@ -170,12 +170,12 @@ trait Guarded extends Expr {
 }
 
 /** Implements conditional expressions. */
-case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
+case class If(gd: Expr, thn: Expr, els: Expr) extends Guarded {
   def typecheck(typemap: Map[String, String]) : String = {
     if (gd.typecheck(typemap) != "Bool") {
       Log.error("If guard " + gd + " non-bool.")
     }
-    val tys = List(then.typecheck(typemap.clone()), els.typecheck(typemap.clone()))
+    val tys = List(thn.typecheck(typemap.clone()), els.typecheck(typemap.clone()))
     //TODO Common types.
     if (tys(0) != tys(1)) {
       Log.error("If branches of differing types.")
@@ -186,7 +186,7 @@ case class If(gd: Expr, then: Expr, els: Expr) extends Guarded {
   def compile(state: LookupTable) = {
     val count = Counters.nextWhile
     compileGuard(gd, "Else" + count, state)
-    then.compile(state)
+    thn.compile(state)
     println("  goto Endif" + count)
     println("  Else" + count+":")
     els.compile(state)

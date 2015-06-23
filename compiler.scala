@@ -11,26 +11,36 @@ object Main {
   var prog = List[Cls]()
   val builtins = List("Bool", "Int", "Int[]", "String", "UCObject")
 
-  /** Compile UCObject.
+  /** Compile input methods.
    *
-   * UCObject is the implicit parent of everything without an explicit one.
-   * It's methods are Uncool's version of a standard libary.
    */
-  def compileObjectClass = {
-    val stdout = Console.out
-    val fileout = new java.io.FileOutputStream("UCObject.j")
-    Console.setOut(fileout)
-    println(".class public UCObject")
-    println(".super java/lang/Object")
+  def compileStdIn = {
+    println(".method public in_string()Ljava/lang/String;")
+    println("  .limit locals 32")
+    println("  .limit stack 32")
+    println("  new java/util/Scanner")
+    println("  dup")
+    println("  getstatic java/lang/System/in Ljava/io/InputStream;")
+    println("  invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V")
+    println("  invokevirtual java/util/Scanner/next()Ljava/lang/String;")
+    println("  areturn")
+    println(".end method")
     println("")
-    println(".method public <init>()V")
+    println(".method public in_int()I")
     println("  .limit locals 32")
     println("  .limit stack 32")
     println("  aload_0")
-    println("  invokespecial java/lang/Object/<init>()V")
-    println("  return")
+    println("  invokevirtual UCObject/in_string()Ljava/lang/String;")
+    println("  invokestatic java/lang/Integer/parseInt(Ljava/lang/String;)I")
+    println("  ireturn")
     println(".end method")
     println("")
+  }
+
+  /** Compile output methods.
+   *
+   */
+  def compileStdOut = {
     println(".method public out_string(Ljava/lang/String;)Ljava/lang/String;")
     println("  .limit locals 32")
     println("  .limit stack 32")
@@ -54,26 +64,30 @@ object Main {
     println("  ireturn")
     println(".end method")
     println("")
-    println(".method public in_string()Ljava/lang/String;")
-    println("  .limit locals 32")
-    println("  .limit stack 32")
-    println("  new java/util/Scanner")
-    println("  dup")
-    println("  getstatic java/lang/System/in Ljava/io/InputStream;")
-    println("  invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V")
-    println("  invokevirtual java/util/Scanner/next()Ljava/lang/String;")
-    println("  areturn")
-    println(".end method")
+  }
+
+  /** Compile UCObject.
+   *
+   * UCObject is the implicit parent of everything without an explicit one.
+   * It's methods are Uncool's version of a standard libary.
+   */
+  def compileObjectClass = {
+    val stdout = Console.out
+    val fileout = new java.io.FileOutputStream("UCObject.j")
+    Console.setOut(fileout)
+    println(".class public UCObject")
+    println(".super java/lang/Object")
     println("")
-    println(".method public in_int()I")
+    println(".method public <init>()V")
     println("  .limit locals 32")
     println("  .limit stack 32")
     println("  aload_0")
-    println("  invokevirtual UCObject/in_string()Ljava/lang/String;")
-    println("  invokestatic java/lang/Integer/parseInt(Ljava/lang/String;)I")
-    println("  ireturn")
+    println("  invokespecial java/lang/Object/<init>()V")
+    println("  return")
     println(".end method")
     println("")
+    compileStdOut
+    compileStdIn
     println(".method public abort()V")
     println("  .limit locals 32")
     println("  .limit stack 32")
@@ -120,7 +134,7 @@ object Main {
   }
 
   def main(args: Array[String]) = {
-    val ast : List[Cls] = Uncool.make_ast()
+    val ast : List[Cls] = Uncool.make_ast(args(0))
     if (!hasMain(ast)) {
       Log.error("Main not found.")
     }

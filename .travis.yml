@@ -2,4 +2,4 @@ language: scala
 install:
   - sudo apt-get install -y jasmin-sable
   - sudo apt-get install -y scala
-script: ./tests.sh
+script: sbt test

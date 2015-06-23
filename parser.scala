@@ -213,8 +213,9 @@ class Comp extends RegexParsers with PackratParsers {
 }
 
 object Uncool extends Comp {
-  def make_ast() : List[Cls]= {
-    val sauce = io.Source.stdin.mkString
+  def make_ast(file: String) : List[Cls]= {
+    val sauce = io.Source.fromFile(file).mkString
+//    val sauce = io.Source.stdin.mkString
     parseAll(prog, sauce).get
   }
 }

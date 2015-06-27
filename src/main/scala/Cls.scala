@@ -71,7 +71,7 @@ class Cls (name: String, parent: String, feats: List[Feature]) {
       state
     }
     if (initmeth != None) {
-      initmeth.get.body.compile(initstate)
+      initmeth.get.body.compile(initstate, true)
     }
     println("  return")
     println(".end method")

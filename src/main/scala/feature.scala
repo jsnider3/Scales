@@ -72,7 +72,7 @@ case class Method(name: String, args:List[Typed], ty:String, body: Expr)
   def compile(state: LookupTable) = {
     val scope = loadArgs(state)
     printHeader
-    body.compile(scope)
+    body.compile(scope, true)
     printFooter
   }
 

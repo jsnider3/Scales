@@ -38,7 +38,7 @@ trait Compilable {
    *
    * @return: The amount of variables that this pushes on the stack.
    */
-  def compile(state: LookupTable) : Int
+  def compile(state: LookupTable, store: Boolean)
 }
 
 trait Typable {
@@ -62,14 +62,16 @@ case class UnaOp(op: OP.Value, x: Expr) extends Expr {
     }
   }
 
-  def compile(state: LookupTable) = {
-    x.compile(state)
+  def compile(state: LookupTable, store: Boolean) = {
+    x.compile(state, true)
     op match {
       case CMP => println("  ineg")
       case NOT => println("  ineg")
       case VOID => println("  ;TODO isVoid x")
     }
-    1
+    if (!store) {
+      Jas.pop(1)
+    }
   }
 
 }
@@ -88,9 +90,9 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
     }
   }
 
-  def compile(state: LookupTable) = {
-    x.compile(state)
-    y.compile(state)
+  def compile(state: LookupTable, store: Boolean) = {
+    x.compile(state, true)
+    y.compile(state, true)
     println("  ;" + this)
     op match {
       case PLUS => println("  iadd")
@@ -100,7 +102,9 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
 
       case _ => makeComparison()
     }
-    1
+    if (!store) {
+      Jas.pop(1)
+    }
   }
 
   def makeComparison() = {
@@ -127,14 +131,16 @@ case class OpExpr(op: OP.Value, x: Expr, y: Expr) extends Expr{
 case class Constant(ty: String, con: String) extends Expr {
   def typecheck(typemap: Map[String, String]) : String = ty
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     println("  ;constant " + con)
     if (con == "null") {
       println(" aconst_null")
     } else {
       println("  ldc " + con)
     }
-    1 
+    if (!store) {
+      Jas.pop(1)
+    }
   }
 
 }
@@ -143,28 +149,27 @@ case class Constant(ty: String, con: String) extends Expr {
 trait Guarded extends Expr {
   def compileGuard(grd: Expr, target: String, state: LookupTable) = {
     grd match { 
-      case OpExpr(NE, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(NE, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmpeq " + target)
-      case OpExpr(GT, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(GT, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmple " + target)
-      case OpExpr(GE, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(GE, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmplt " + target)
-      case OpExpr(LT, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(LT, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmpge " + target)
-      case OpExpr(LE, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(LE, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmpgt " + target)
-      case OpExpr(EQ, a, b) => a.compile(state)
-        b.compile(state)
+      case OpExpr(EQ, a, b) => a.compile(state, true)
+        b.compile(state, true)
         println("  if_icmpne " + target)
-      case _ => grd.compile(state)
+      case _ => grd.compile(state, true)
                 println("  ifeq " + target)
     }
-    0
   }
 
 }
@@ -183,15 +188,17 @@ case class If(gd: Expr, thn: Expr, els: Expr) extends Guarded {
     tys(0)
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     val count = Counters.nextWhile
     compileGuard(gd, "Else" + count, state)
-    thn.compile(state)
+    thn.compile(state, true)
     println("  goto Endif" + count)
     println("  Else" + count+":")
-    els.compile(state)
+    els.compile(state, true)
     println("  Endif" + count + ":")
-    0
+    if (!store) {
+      Jas.pop(1)
+    }
   }
 }
 
@@ -205,15 +212,16 @@ case class While(grd: Expr, bod: Expr) extends Guarded {
     "Int"
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     val count = Counters.nextWhile
     println("  Startloop" + count + ":")
     compileGuard(grd, "Endloop" + count, state)
-    Jas.pop(bod.compile(state))
+    bod.compile(state, false)
     println("  goto Startloop" + count)
     println("  Endloop" + count + ":")
-    println("  ldc 0")
-    1
+    if (store) {
+      println("  ldc 0")
+    }
   }
 
 }
@@ -227,10 +235,10 @@ case class LetX(lets: List[Let], bod: Expr) extends Expr {
     bod.typecheck(letstate)
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     val letstate = state.enterScope(lets)
     println("; inscope")
-    bod.compile(letstate)
+    bod.compile(letstate, store)
   }
 
 }
@@ -241,10 +249,9 @@ case class Seq(bod: List[Expr]) extends Expr {
     (bod map {_.typecheck(typemap)}).last
   }
 
-  def compile(state: LookupTable) = {
-    bod.reverse.tail.reverse.foreach{x => Jas.pop(x.compile(state))}
-    bod.last.compile(state)
-    1
+  def compile(state: LookupTable, store: Boolean) = {
+    bod.reverse.tail.reverse.foreach{x => x.compile(state, false)}
+    bod.last.compile(state, store)
   }
 
 }
@@ -260,9 +267,10 @@ case class Var(id: String) extends Expr {
     }
   }
 
-  def compile(state: LookupTable) = {
-    state.get(id)
-    1
+  def compile(state: LookupTable, store: Boolean) = {
+    if (store) {
+      state.get(id)
+    }
   }
 }
 
@@ -276,10 +284,11 @@ case class Asgn(id: String, rval: Expr) extends Expr {
     tys(1)
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     state.put(id, rval)
-    state.get(id)
-    1
+    if (store) {
+      state.get(id)
+    }
   }
 }
 
@@ -299,16 +308,19 @@ case class ArrAsgn(id: String, ind: Expr, rval: Expr) extends Expr {
     "Int"
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     //TODO This code is terrible.
     state.get(id)
-    ind.compile(state)
-    rval.compile(state)
-    println("  dup")
-    println("  istore 31")
+    ind.compile(state, true)
+    rval.compile(state, true)
+    if (store) {
+      println("  dup")
+      println("  istore 31")
+    }
     println("  iastore")
-    println("  iload 31")
-    1
+    if (store) {
+      println("  iload 31")
+    }
   }
 }
 
@@ -322,10 +334,11 @@ case class ArrDec(size: Expr) extends Expr {
     "Int[]"
   }
 
-  def compile(state: LookupTable) = {
-    size.compile(state)
-    println("  newarray int")
-    1
+  def compile(state: LookupTable, store: Boolean) = {
+    size.compile(state, store)
+    if (store) {
+      println("  newarray int")
+    }
   }
 }
 
@@ -338,11 +351,10 @@ case class ClassDec(ty:String, args: List[Expr]) extends Callable {
     ty
   }
 
-  def compile(state: LookupTable) = {
+  def compile(state: LookupTable, store: Boolean) = {
     println("  new " + ty)
     println("  dup")
-    compileCall(args, state)
-    1
+    compileCall(args, state, store)
   }
 }
 
@@ -355,11 +367,12 @@ case class ArrGet(id: Expr, ind: Expr) extends Expr {
     "Int"
   }
 
-  def compile(state: LookupTable) = {
-    id.compile(state)
-    ind.compile(state)
-    println("  iaload")
-    1
+  def compile(state: LookupTable, store: Boolean) = {
+    id.compile(state, store)
+    ind.compile(state, store)
+    if (store) {
+      println("  iaload")
+    }
   }
 }
 
@@ -379,9 +392,12 @@ trait Callable extends Expr{
     }}
   }
 
-  def compileCall(args: List[Expr], state: LookupTable) = {
-    args.foreach{_.compile(state)}
+  def compileCall(args: List[Expr], state: LookupTable, store: Boolean) = {
+    args.foreach{_.compile(state, true)}
     meth.get.call
+    if (!store) {
+      Jas.pop(1)
+    }
   }
 
 }
@@ -399,10 +415,9 @@ case class MethodCall(id: String, args: List[Expr]) extends  Callable {
     meth.get.ty
   }
 
-  def compile(state: LookupTable) : Int = {
+  def compile(state: LookupTable, store: Boolean) = {
     println("  aload_0")
-    compileCall(args, state)
-    1
+    compileCall(args, state, store)
   }
 }
 
@@ -423,10 +438,9 @@ case class ClassCall(self: Expr, id: String, args: List[Expr]) extends Callable 
     meth.get.ty
   }
 
-  def compile(state: LookupTable) : Int = {
-    self.compile(state)
-    compileCall(args, state)
-    1
+  def compile(state: LookupTable, store: Boolean) = {
+    self.compile(state, true)
+    compileCall(args, state, store)
   }
 }
 

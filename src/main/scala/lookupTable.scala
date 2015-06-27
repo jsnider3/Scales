@@ -103,11 +103,11 @@ class LookupTable {
     getLoc(id) match {
       case Field(f) => {
         println("  aload_0")
-        ex.compile(this)
+        ex.compile(this, true)
         println("  putfield " + f + " " + Jas.typecast(getType(id)))
       }
       case Local(n) => {
-        ex.compile(this)
+        ex.compile(this, true)
         getType(id) match {
           case "Int" => println("  istore " + n)
           case "Bool" => println("  istore " + n)
